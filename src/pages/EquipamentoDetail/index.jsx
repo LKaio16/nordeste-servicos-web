@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as equipamentoService from '../../services/equipamentoService';
 import * as clienteService from '../../services/clienteService';
 import Modal from '../../components/Modal';
+import Spinner from '../../components/Spinner';
 import {
     PageContainer,
     PageHeader,
@@ -100,7 +101,7 @@ function EquipamentoDetailPage() {
         }
     };
 
-    if (isLoading) return <PageContainer><p>Carregando dados do equipamento...</p></PageContainer>;
+    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
     if (!equipamento) return <PageContainer><p>Equipamento não encontrado.</p></PageContainer>;
 

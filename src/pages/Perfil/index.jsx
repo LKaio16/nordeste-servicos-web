@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { getUsuarioById } from '../../services/usuarioService';
 import { PageContainer, Title, PageHeader } from '../../styles/common';
+import Spinner from '../../components/Spinner';
 import styled from 'styled-components';
 
 const Card = styled.div`
@@ -107,7 +108,7 @@ function PerfilPage() {
         fetchProfile();
     }, [user]);
     
-    if (isLoading) return <PageContainer><p>Carregando perfil...</p></PageContainer>;
+    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>{error}</p></PageContainer>;
     if (!profile) return <PageContainer><p>Perfil não encontrado.</p></PageContainer>;
     

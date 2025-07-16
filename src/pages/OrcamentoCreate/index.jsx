@@ -52,7 +52,7 @@ function OrcamentoCreatePage() {
         try {
             const novoOrcamento = await orcamentoService.createOrcamento(formData);
             alert('Orçamento criado com sucesso!');
-            navigate(`/orcamentos/${novoOrcamento.id}`);
+            navigate(`/admin/orcamentos/detalhes/${novoOrcamento.id}`);
         } catch (submitError) {
             console.error("Erro ao criar orçamento:", submitError);
             setError('Falha ao criar o orçamento.');

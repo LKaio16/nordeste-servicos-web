@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import React from 'react';
+import { Button } from '../../styles/common'; // Importar o botão base
 
 const ModalBackdrop = styled.div`
   position: fixed;
@@ -7,49 +8,46 @@ const ModalBackdrop = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1050; // Garantir que fique sobre outros elementos
 `;
 
 const ModalContent = styled.div`
   background-color: white;
-  padding: ${({ theme }) => theme.spacing.xlarge};
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  max-width: 400px;
+  max-width: 450px;
+  width: 100%;
+  margin: 1rem;
+`;
+
+const ModalHeader = styled.div`
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
 `;
 
 const ModalTitle = styled.h2`
-  margin-top: 0;
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+`;
+
+const ModalBody = styled.div`
+    padding: 1.5rem 0;
+    font-size: 1rem;
+    color: #374151;
+    line-height: 1.5;
 `;
 
 const ButtonGroup = styled.div`
-  margin-top: ${({ theme }) => theme.spacing.large};
+  margin-top: 1.5rem;
   display: flex;
-  justify-content: center;
-  gap: ${({ theme }) => theme.spacing.medium};
-`;
-
-const Button = styled.button`
-  padding: ${({ theme }) => theme.spacing.small} ${({ theme }) => theme.spacing.large};
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-`;
-
-const DeleteButton = styled(Button)`
-  background-color: ${({ theme }) => theme.colors.danger};
-  color: white;
-`;
-
-const CancelButton = styled(Button)`
-  background-color: #eee;
-  color: #333;
+  justify-content: flex-end;
+  gap: 1rem;
 `;
 
 
@@ -58,14 +56,16 @@ function Modal({ isOpen, onClose, onConfirm, title, children }) {
 
   return (
     <ModalBackdrop onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalTitle>{title}</ModalTitle>
-        <div>{children}</div>
-        <ButtonGroup>
-          <CancelButton onClick={onClose}>Cancelar</CancelButton>
-          <DeleteButton onClick={onConfirm}>Excluir</DeleteButton>
-        </ButtonGroup>
-      </ModalContent>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+                <ModalTitle>{title}</ModalTitle>
+            </ModalHeader>
+            <ModalBody>{children}</ModalBody>
+            <ButtonGroup>
+                <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                <Button variant="danger" onClick={onConfirm}>Excluir</Button>
+            </ButtonGroup>
+        </ModalContent>
     </ModalBackdrop>
   );
 }

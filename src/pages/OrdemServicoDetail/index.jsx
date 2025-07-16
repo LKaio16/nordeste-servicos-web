@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import * as osService from '../../services/osService';
 import Modal from '../../components/Modal';
 import ImageModal from '../../components/ImageModal';
+import Spinner from '../../components/Spinner';
 import {
     PageContainer,
     PageHeader,
@@ -149,7 +150,7 @@ function OrdemServicoDetailPage() {
 
     const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString() : 'N/A';
     
-    if (isLoading) return <PageContainer><p>Carregando detalhes da OS...</p></PageContainer>;
+    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
     if (!os) return <PageContainer><p>Ordem de Serviço não encontrada.</p></PageContainer>;
 

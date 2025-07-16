@@ -1,32 +1,34 @@
 import React, { createContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { getUsuarioById } from '../services/usuarioService'; // Importar o serviço
+import { getUsuarioById } from '../services/usuarioService';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true); // Adiciona o estado de loading
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadUser = async () => {
-            const storedUser = localStorage.getItem('user');
             const token = localStorage.getItem('token');
-            if (storedUser && token) {
-                const parsedUser = JSON.parse(storedUser);
+            const storedUser = localStorage.getItem('user');
+
+            if (token && storedUser) {
                 api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                
+                const parsedUser = JSON.parse(storedUser);
                 try {
-                    // Busca o perfil completo para obter a foto
+                    // Tenta buscar o perfil mais recente para obter a foto
                     const fullProfile = await getUsuarioById(parsedUser.id);
                     setUser(fullProfile);
                 } catch (error) {
-                    console.error("Falha ao carregar perfil completo, usando dados locais.", error);
-                    // Se a busca falhar, usa os dados do localStorage (sem foto)
+                    console.error("Falha ao recarregar perfil, usando dados locais.", error);
+                    // Em caso de falha (ex: offline), usa os dados do localStorage
                     setUser(parsedUser);
                 }
             }
+            setIsLoading(false); // Finaliza o carregamento
         };
         loadUser();
     }, []);
@@ -37,12 +39,19 @@ export const AuthProvider = ({ children }) => {
             const { token, ...userData } = response.data;
 
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(userData));
-
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            setUser(userData);
+            
+            // Busca o perfil completo para ter todos os dados
+            const fullProfile = await getUsuarioById(userData.id);
+            
+            // Salva o perfil completo no estado
+            setUser(fullProfile);
 
-            return userData;
+            // Salva no localStorage uma versão SEM a foto para não sobrecarregar
+            const { fotoPerfil, ...userToStore } = fullProfile;
+            localStorage.setItem('user', JSON.stringify(userToStore));
+
+            return fullProfile;
         } catch (error) {
             console.error("Falha no login", error);
             throw error;
@@ -51,6 +60,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         setUser(null);
+        setIsLoading(false);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         delete api.defaults.headers.common['Authorization'];
@@ -62,6 +72,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
+        isLoading, // Expõe o estado de loading
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

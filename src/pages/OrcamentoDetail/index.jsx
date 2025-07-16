@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import orcamentoService from '../../services/orcamentoService';
 import Modal from '../../components/Modal';
+import Spinner from '../../components/Spinner';
 import { PageContainer, PageHeader, Title, Button, HeaderActions, Table, Th, Td, Tr } from '../../styles/common';
 import { FiDownload, FiEdit, FiTrash2 } from 'react-icons/fi';
 
@@ -95,7 +96,7 @@ function OrcamentoDetailPage() {
 
     const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString() : 'N/A';
     
-    if (isLoading) return <PageContainer><p>Carregando detalhes do Orçamento...</p></PageContainer>;
+    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
     if (!orcamento) return <PageContainer><p>Orçamento não encontrado.</p></PageContainer>;
 

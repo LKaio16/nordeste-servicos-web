@@ -1,21 +1,25 @@
-import React, { useContext } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import AuthContext from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import Spinner from '../Spinner';
+import { PageContainer } from '../../styles/common';
 
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated } = useContext(AuthContext);
+function ProtectedRoute({ children }) {
+    const { isAuthenticated, isLoading } = useAuth();
     const location = useLocation();
+
+    if (isLoading) {
+        return (
+            <PageContainer>
+                <Spinner />
+            </PageContainer>
+        );
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Opcional: verificação de perfil/role
-    // if (requiredRole && user?.perfil !== requiredRole) {
-    //     return <Navigate to="/admin/unauthorized" replace />;
-    // }
-
     return children;
-};
+}
 
 export default ProtectedRoute; 

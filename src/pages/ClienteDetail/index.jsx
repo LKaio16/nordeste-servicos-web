@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getClienteById, deleteCliente } from '../../services/clienteService';
 import Modal from '../../components/Modal';
+import Spinner from '../../components/Spinner';
 import {
     PageContainer,
     PageHeader,
@@ -93,7 +94,7 @@ function ClienteDetailPage() {
         }
     };
 
-    if (isLoading) return <PageContainer><p>Carregando dados do cliente...</p></PageContainer>;
+    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
     if (!cliente) return <PageContainer><p>Cliente não encontrado.</p></PageContainer>;
 

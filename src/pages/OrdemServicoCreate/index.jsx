@@ -36,6 +36,7 @@ function OrdemServicoCreatePage() {
                 setEquipamentos(equipamentosRes);
                 setTecnicos(tecnicosRes.filter(u => u.perfil === 'TECNICO'));
             } catch (err) {
+                console.error('Falha ao carregar dados iniciais:', err);
                 setError('Falha ao carregar dados para os menus.');
             } finally {
                 setIsLoading(false);
@@ -63,8 +64,9 @@ function OrdemServicoCreatePage() {
         try {
             const novaOS = await osService.createOrdemServico(osData);
             alert('Ordem de Serviço criada com sucesso!');
-            navigate(`/os/${novaOS.id}`); // Navega para a página de detalhes da nova OS
+            navigate(`/admin/os/detalhes/${novaOS.id}`); // Navega para a página de detalhes da nova OS
         } catch (err) {
+            console.error('Erro ao criar Ordem de Serviço:', err);
             setError('Falha ao criar a Ordem de Serviço.');
         }
     };
