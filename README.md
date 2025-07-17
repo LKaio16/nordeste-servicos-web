@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icon.jpg" alt="Nordeste Serviços Logo" width="150"/>
+  <img src="public/icon.png" alt="Nordeste Serviços Logo" width="150"/>
   <h1>Nordeste Serviços</h1>
   <p>Sistema de Gestão de Ordens de Serviço</p>
 </div>
@@ -110,8 +110,8 @@ A aplicação frontend estará acessível em `http://localhost:5173` (ou outra p
 *(Aqui você pode adicionar screenshots da sua aplicação para torná-la mais visual)*
 
 <div align="center">
-  <!-- Exemplo: <img src="docs/screenshot-login.png" alt="Tela de Login" width="400"/> -->
-  <!-- Exemplo: <img src="docs/screenshot-dashboard.png" alt="Dashboard" width="400"/> -->
+  <img src="public/print_login.jpg" alt="Tela de Login" width="400"/>
+  <img src="public/print_dashboard.jpg" alt="Dashboard" width="400"/>
 </div>
 
 ---
