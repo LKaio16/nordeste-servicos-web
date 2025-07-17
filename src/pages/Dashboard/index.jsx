@@ -5,6 +5,7 @@ import { FiUsers, FiHardDrive, FiFileText, FiRefreshCw } from 'react-icons/fi';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { PageHeader, Title, Table, Th, Td, Tr, RefreshButton, HeaderActions } from '../../styles/common';
+import Spinner from '../../components/Spinner';
 
 const DashboardWrapper = styled.div`
     width: 100%;
@@ -152,6 +153,13 @@ const TdMobileHidden = styled(Td)`
     }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+`;
+
 
 function DashboardPage() {
     const [stats, setStats] = useState(null);
@@ -164,6 +172,7 @@ function DashboardPage() {
             const data = await dashboardService.getDashboardStats();
             setStats(data);
         } catch (err) {
+            console.error("Erro ao buscar estatísticas do dashboard:", err);
             setError("Não foi possível carregar os dados do dashboard.");
         }
     }, []);
@@ -183,7 +192,17 @@ function DashboardPage() {
         setIsRefreshing(false);
     };
 
-    if (isLoading) return <DashboardWrapper><p>Carregando dashboard...</p></DashboardWrapper>;
+    if (isLoading) return (
+        <DashboardWrapper>
+            <PageHeader>
+                <Title>Dashboard</Title>
+            </PageHeader>
+            <LoadingContainer>
+                <Spinner />
+            </LoadingContainer>
+        </DashboardWrapper>
+    );
+
     if (error) return <p style={{ color: 'red' }}>Erro: {error}</p>;
 
     const pieChartData = stats ? Object.entries(stats.os.status).map(([name, value]) => ({ name, value })) : [];

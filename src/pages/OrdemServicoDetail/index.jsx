@@ -205,15 +205,15 @@ function OrdemServicoDetailPage() {
                 <InfoGrid>
                     <DetailItem>
                         <DetailLabel>Cliente</DetailLabel>
-                        <DetailValue>{os.nomeCliente || 'N/A'}</DetailValue>
+                        <DetailValue>{os.cliente?.nomeCompleto || 'N/A'}</DetailValue>
                     </DetailItem>
                     <DetailItem>
                         <DetailLabel>Equipamento</DetailLabel>
-                        <DetailValue>{os.nomeEquipamento || 'N/A'}</DetailValue>
+                        <DetailValue>{os.equipamento ? `${os.equipamento.marcaModelo} (S/N: ${os.equipamento.numeroSerieChassi})` : 'N/A'}</DetailValue>
                     </DetailItem>
                     <DetailItem>
                         <DetailLabel>Técnico Responsável</DetailLabel>
-                        <DetailValue>{os.nomeTecnicoResponsavel || 'Não atribuído'}</DetailValue>
+                        <DetailValue>{os.tecnicoAtribuido?.nome || 'Não atribuído'}</DetailValue>
                     </DetailItem>
                 </InfoGrid>
             </Card>

@@ -14,6 +14,8 @@ import {
     HeaderActions
 } from '../../styles/common';
 import styled from 'styled-components';
+import Spinner from '../../components/Spinner';
+
 
 const Card = styled.div`
   background-color: #ffffff;
@@ -43,6 +45,38 @@ const SectionTitle = styled.h2`
   border-bottom: 1px solid #e5e7eb;
 `;
 
+// --- Helper functions for masks ---
+const formatCEP = (value) => {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .slice(0, 9);
+};
+
+const formatPhone = (value) => {
+    const cleanValue = value.replace(/\D/g, '').slice(0, 11);
+    if (cleanValue.length > 10) {
+        return cleanValue.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    return cleanValue.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+};
+
+const formatCPF_CNPJ = (value) => {
+    const cleanValue = value.replace(/\D/g, '').slice(0, 14);
+    if (cleanValue.length <= 11) {
+        return cleanValue
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return cleanValue
+        .replace(/(\d{2})(\d)/, '$1.$2')
+        .replace(/(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+};
+// ------------------------------------
+
 
 function ClienteEdit() {
     const { id } = useParams();
@@ -60,7 +94,14 @@ function ClienteEdit() {
             }
             try {
                 const data = await getClienteById(id);
-                setCliente(data);
+                // Apply masks to data coming from API
+                setCliente({
+                    ...data,
+                    cep: formatCEP(data.cep || ''),
+                    cpfCnpj: formatCPF_CNPJ(data.cpfCnpj || ''),
+                    telefonePrincipal: formatPhone(data.telefonePrincipal || ''),
+                    telefoneAdicional: formatPhone(data.telefoneAdicional || ''),
+                });
             } catch (err) {
                 console.error('Erro ao buscar dados do cliente:', err);
                 setError('Não foi possível carregar os dados do cliente.');
@@ -74,21 +115,46 @@ function ClienteEdit() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setCliente(prev => ({ ...prev, [name]: value }));
+        let formattedValue = value;
+
+        switch (name) {
+            case 'cep':
+                formattedValue = formatCEP(value);
+                break;
+            case 'telefonePrincipal':
+            case 'telefoneAdicional':
+                formattedValue = formatPhone(value);
+                break;
+            case 'cpfCnpj':
+                formattedValue = formatCPF_CNPJ(value);
+                break;
+            default:
+                break;
+        }
+        
+        setCliente(prev => ({ ...prev, [name]: formattedValue }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await updateCliente(id, cliente);
-            navigate(`/admin/clientes/detalhe/${id}`);
+            // Remove masks before sending to backend
+            const payload = {
+                ...cliente,
+                cep: cliente.cep.replace(/\D/g, ''),
+                cpfCnpj: cliente.cpfCnpj.replace(/\D/g, ''),
+                telefonePrincipal: cliente.telefonePrincipal.replace(/\D/g, ''),
+                telefoneAdicional: cliente.telefoneAdicional.replace(/\D/g, ''),
+            };
+            await updateCliente(id, payload);
+            navigate(`/admin/clientes/detalhes/${id}`);
         } catch (err) {
             console.error('Erro ao atualizar cliente:', err);
             alert('Falha ao atualizar cliente.');
         }
     };
 
-    if (isLoading) return <PageContainer>Carregando...</PageContainer>;
+    if (isLoading) return <PageContainer><Spinner/></PageContainer>;
     if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
     if (!cliente) return <PageContainer>Cliente não encontrado.</PageContainer>;
 
@@ -97,7 +163,7 @@ function ClienteEdit() {
             <PageHeader>
                 <Title>Editar Cliente</Title>
                 <HeaderActions>
-                    <Button as={Link} to={`/admin/clientes/detalhe/${id}`} variant="secondary">
+                    <Button as={Link} to={`/admin/clientes/detalhes/${id}`} variant="secondary">
                         Cancelar
                     </Button>
                     <Button type="submit" form="cliente-form">
