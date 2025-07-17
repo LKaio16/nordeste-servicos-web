@@ -38,6 +38,11 @@ export const AuthProvider = ({ children }) => {
             const response = await api.post('/api/auth/login', credentials);
             const { token, ...userData } = response.data;
 
+            // Adiciona a verificação de perfil no frontend
+            if (userData.perfil !== 'ADMIN') {
+                throw new Error("Acesso negado. Apenas administradores podem entrar.");
+            }
+
             localStorage.setItem('token', token);
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             

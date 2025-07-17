@@ -188,6 +188,9 @@ function Login() {
     } catch (err) {
       if (err.response && err.response.data) {
         setError(err.response.data); // Exibe a mensagem de erro vinda do backend
+      } else if (err.message) {
+        // Captura o erro lançado pelo AuthContext
+        setError(err.message);
       } else {
         setError('Falha na comunicação com o servidor. Tente novamente.');
       }

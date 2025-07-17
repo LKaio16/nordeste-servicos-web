@@ -72,7 +72,7 @@ function UsuarioEditPage() {
 
                 <FormGroup>
                     <Label htmlFor="email">Email</Label>
-                    <Input type="email" id="email" name="email" value={usuario.email || ''} onChange={handleChange} required />
+                    <Input type="text" id="email" name="email" value={usuario.email || ''} onChange={handleChange} required />
                 </FormGroup>
 
                 <FormGroup>
