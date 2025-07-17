@@ -30,7 +30,7 @@ const BackButton = styled.button`
 
 const TitleContainer = styled.div`
     display: flex;
-    align-items: center;
+    align-items: baseline;
 `;
 
 const Card = styled.div`
