@@ -5,7 +5,27 @@ import orcamentoService from '../../services/orcamentoService';
 import Modal from '../../components/Modal';
 import Spinner from '../../components/Spinner';
 import { PageContainer, PageHeader, Title, Button, HeaderActions, Table, Th, Td, Tr } from '../../styles/common';
-import { FiDownload, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiDownload, FiEdit, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+
+const BackButton = styled.button`
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #4A5568;
+    margin-right: 0.75rem;
+
+    &:hover {
+        color: #2D3748;
+    }
+`;
+
+const TitleContainer = styled.div`
+    display: flex;
+    align-items: center;
+`;
 
 const Card = styled.div`
   background-color: #ffffff;
@@ -103,7 +123,12 @@ function OrcamentoDetailPage() {
     return (
         <PageContainer>
             <PageHeader>
-                <Title>Detalhes do Orçamento #{orcamento.numeroOrcamento}</Title>
+                <TitleContainer>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <FiArrowLeft />
+                    </BackButton>
+                    <Title>Detalhes do Orçamento #{orcamento.numeroOrcamento}</Title>
+                </TitleContainer>
                 <HeaderActions>
                     <Button onClick={() => orcamentoService.downloadOrcamentoPdf(id)}>
                         <FiDownload style={{ marginRight: '8px' }} />

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getClienteById, deleteCliente } from '../../services/clienteService';
 import Modal from '../../components/Modal';
 import Spinner from '../../components/Spinner';
+import { FiArrowLeft } from 'react-icons/fi';
 import {
     PageContainer,
     PageHeader,
@@ -11,6 +12,26 @@ import {
     HeaderActions
 } from '../../styles/common';
 import styled from 'styled-components';
+
+const BackButton = styled.button`
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #4A5568;
+    margin-right: 0.75rem;
+
+    &:hover {
+        color: #2D3748;
+    }
+`;
+
+const TitleContainer = styled.div`
+    display: flex;
+    align-items: center;
+`;
 
 const Card = styled.div`
   background-color: #ffffff;
@@ -103,7 +124,12 @@ function ClienteDetailPage() {
     return (
         <PageContainer>
             <PageHeader>
-                <Title>Detalhes do Cliente</Title>
+                <TitleContainer>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <FiArrowLeft />
+                    </BackButton>
+                    <Title>Detalhes do Cliente</Title>
+                </TitleContainer>
                 <HeaderActions>
                     <Button as={Link} to={`/admin/clientes/editar/${id}`}>Editar</Button>
                     <Button variant="danger" onClick={() => setIsModalOpen(true)}>Excluir</Button>

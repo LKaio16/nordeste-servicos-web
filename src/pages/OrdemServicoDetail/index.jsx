@@ -13,7 +13,27 @@ import {
     HeaderActions
 } from '../../styles/common';
 import { getStatusLabel, getPrioridadeLabel } from '../../utils/enumLabels';
-import { FiDownload, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiDownload, FiEdit, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+
+const BackButton = styled.button`
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #4A5568;
+    margin-right: 0.75rem;
+
+    &:hover {
+        color: #2D3748;
+    }
+`;
+
+const TitleContainer = styled.div`
+    display: flex;
+    align-items: center;
+`;
 
 const Card = styled.div`
   background-color: #ffffff;
@@ -157,7 +177,12 @@ function OrdemServicoDetailPage() {
     return (
         <PageContainer>
             <PageHeader>
-                <Title>Detalhes da OS #{os.numeroOS}</Title>
+                <TitleContainer>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <FiArrowLeft />
+                    </BackButton>
+                    <Title>Detalhes da OS #{os.numeroOS}</Title>
+                </TitleContainer>
                  <HeaderActions>
                     <Button onClick={() => osService.downloadOsPdf(id)}>
                         <FiDownload style={{ marginRight: '8px' }} />
