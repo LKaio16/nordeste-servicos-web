@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPeca } from '../../services/pecaService';
+import { pecaMaterialService } from '../../services/pecaMaterialService';
 import { PageContainer, Title, Form, FormGroup, Label, Input, Button } from '../../styles/common';
+import styled from 'styled-components';
+
+const ErrorMessage = styled.p`
+    color: #e53e3e;
+    background-color: #fed7d7;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+`;
 
 function PecaCreate() {
     const [peca, setPeca] = useState({
@@ -12,6 +22,7 @@ function PecaCreate() {
         preco: '',
         estoque: ''
     });
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -24,23 +35,37 @@ function PecaCreate() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
+
+        if (!peca.codigo) {
+            setError("O campo 'Código' é obrigatório.");
+            return;
+        }
+
+        const codigoExists = await pecaMaterialService.checkCodigoExists(peca.codigo);
+        if (codigoExists) {
+            setError(`O código '${peca.codigo}' já está em uso. Por favor, insira um código diferente.`);
+            return;
+        }
+
         try {
             const pecaData = {
                 ...peca,
                 preco: parseFloat(peca.preco),
                 estoque: parseInt(peca.estoque, 10)
             };
-            await createPeca(pecaData);
+            await pecaMaterialService.createPeca(pecaData);
             navigate('/admin/pecas');
-        } catch (error) {
-            console.error('Erro ao criar peça:', error);
-            alert('Falha ao criar peça. Verifique o console para mais detalhes.');
+        } catch (err) {
+            console.error('Erro ao criar peça:', err);
+            setError(err.message || 'Falha ao criar a peça. Tente novamente.');
         }
     };
 
     return (
         <PageContainer>
             <Title>Adicionar Nova Peça</Title>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
             <Form onSubmit={handleSubmit}>
                 <FormGroup>
                     <Label htmlFor="descricao">Descrição</Label>
@@ -56,7 +81,7 @@ function PecaCreate() {
                 </FormGroup>
                 <FormGroup>
                     <Label htmlFor="codigo">Código</Label>
-                    <Input type="text" id="codigo" name="codigo" value={peca.codigo} onChange={handleChange} />
+                    <Input type="text" id="codigo" name="codigo" value={peca.codigo} onChange={handleChange} required />
                 </FormGroup>
                 <FormGroup>
                     <Label htmlFor="preco">Preço</Label>

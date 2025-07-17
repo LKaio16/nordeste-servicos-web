@@ -54,7 +54,8 @@ function OrdemServicoEditPage() {
                 const tecnicosData = await usuarioService.getAllUsuarios();
                 setTecnicos(tecnicosData.filter(u => u.perfil === 'TECNICO'));
 
-            } catch {
+            } catch(err) {
+                console.error('Falha ao carregar dados:', err);
                 setError('Falha ao carregar dados da página.');
             } finally {
                 setIsLoading(false);
@@ -76,9 +77,9 @@ function OrdemServicoEditPage() {
         e.preventDefault();
         try {
             await osService.updateOrdemServico(id, osData);
-            alert('Ordem de Serviço atualizada com sucesso!');
-            navigate(`/os/${id}`);
-        } catch {
+            navigate(`/admin/os/detalhes/${id}`);
+        } catch(err) {
+            console.error('Falha ao atualizar OS:', err);
             setError('Falha ao atualizar a Ordem de Serviço.');
         }
     };

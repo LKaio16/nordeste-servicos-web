@@ -22,7 +22,7 @@ function ServicoCreatePage() {
     setError(null);
     try {
       await tipoServicoService.createTipoServico(servico);
-      navigate('/servicos');
+      navigate('/admin/servicos');
     } catch (err) {
       setError(err.message || 'Falha ao criar o tipo de serviço.');
     }

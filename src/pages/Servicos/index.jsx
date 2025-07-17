@@ -5,6 +5,7 @@ import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import tipoServicoService from '../../services/tipoServicoService';
 import { Table, Th, Td, Tr, ActionLink, ActionButton, ButtonGroup, PageHeader, Title, CreateButton, RefreshButton, HeaderActions } from '../../styles/common';
 import Modal from '../../components/Modal';
+import AlertModal from '../../components/AlertModal';
 import Spinner from '../../components/Spinner';
 
 const TableWrapper = styled.div`
@@ -18,6 +19,7 @@ function ServicosPage() {
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [servicoToDelete, setServicoToDelete] = useState(null);
+    const [alert, setAlert] = useState({ isOpen: false, message: '' });
 
     const fetchServicos = useCallback(async () => {
         try {
@@ -55,8 +57,9 @@ function ServicosPage() {
             await tipoServicoService.deleteTipoServico(servicoToDelete.id);
             setServicos(prev => prev.filter(s => s.id !== servicoToDelete.id));
         } catch (err) {
-            setError('Erro ao excluir o tipo de serviço.');
-            console.error(err);
+            console.error('Erro ao excluir o tipo de serviço:', err);
+            const errorMessage = err.response?.data?.message || 'Falha ao excluir o serviço. Verifique se ele não está associado a orçamentos ou ordens de serviço.';
+            setAlert({ isOpen: true, message: errorMessage });
         } finally {
             setIsModalOpen(false);
             setServicoToDelete(null);
@@ -123,6 +126,12 @@ function ServicosPage() {
                 <p>Tem certeza que deseja excluir o serviço <strong>{servicoToDelete?.descricao}</strong>?</p>
                 <p>Esta ação não pode ser desfeita.</p>
             </Modal>
+            <AlertModal
+                isOpen={alert.isOpen}
+                onClose={() => setAlert({ isOpen: false, message: '' })}
+                title="Erro ao Excluir"
+                message={alert.message}
+            />
         </>
     );
 }

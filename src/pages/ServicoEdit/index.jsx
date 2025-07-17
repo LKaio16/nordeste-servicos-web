@@ -36,7 +36,7 @@ function ServicoEditPage() {
         setError(null);
         try {
             await tipoServicoService.updateTipoServico(id, servico);
-            navigate('/servicos');
+            navigate('/admin/servicos');
         } catch (err) {
             setError(err.message || 'Falha ao atualizar o tipo de serviço.');
         }

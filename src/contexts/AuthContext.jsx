@@ -38,6 +38,11 @@ export const AuthProvider = ({ children }) => {
             const response = await api.post('/api/auth/login', credentials);
             const { token, ...userData } = response.data;
 
+            // Adiciona verificação de perfil
+            if (userData.perfil !== 'ADMIN') {
+                throw new Error('Acesso negado. Apenas administradores podem acessar esta área.');
+            }
+
             localStorage.setItem('token', token);
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
@@ -48,12 +53,14 @@ export const AuthProvider = ({ children }) => {
             setUser(fullProfile);
 
             // Salva no localStorage uma versão SEM a foto para não sobrecarregar
-            const { fotoPerfil, ...userToStore } = fullProfile;
+            const userToStore = { ...fullProfile };
+            delete userToStore.fotoPerfil;
             localStorage.setItem('user', JSON.stringify(userToStore));
 
             return fullProfile;
         } catch (error) {
             console.error("Falha no login", error);
+            // Propaga o erro para ser tratado na UI
             throw error;
         }
     };

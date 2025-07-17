@@ -1,11 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import * as pecaService from '../../services/pecaService';
-import { PageContainer, Title, Form, FormGroup, Label, Input, Button } from '../../styles/common';
+import {
+    PageContainer,
+    Title,
+    Form,
+    FormGroup,
+    Label,
+    Input,
+    Button,
+    PageHeader,
+    HeaderActions
+} from '../../styles/common';
+import styled from 'styled-components';
+import Spinner from '../../components/Spinner';
+
+const Card = styled.div`
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+`;
+
+const FormGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+`;
 
 function PecaEdit() {
     const { id } = useParams();
-    const [peca, setPeca] = useState(null);
+    const [peca, setPeca] = useState({
+        descricao: '',
+        codigo: '',
+        preco: '',
+        estoque: ''
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -14,7 +48,12 @@ function PecaEdit() {
         const fetchPeca = async () => {
             try {
                 const data = await pecaService.getPecaById(id);
-                setPeca(data);
+                setPeca({
+                    descricao: data.descricao || '',
+                    codigo: data.codigo || '',
+                    preco: data.preco || '',
+                    estoque: data.estoque || ''
+                });
             } catch (error) {
                 console.error('Erro ao buscar dados da peça:', error);
                 setError('Não foi possível carregar os dados da peça.');
@@ -51,7 +90,7 @@ function PecaEdit() {
     };
 
     if (isLoading) {
-        return <PageContainer>Carregando...</PageContainer>;
+        return <PageContainer><Spinner /></PageContainer>;
     }
 
     if (error) {
@@ -60,34 +99,39 @@ function PecaEdit() {
 
     return (
         <PageContainer>
-            <Title>Editar Peça</Title>
-            <Form onSubmit={handleSubmit}>
-                <FormGroup>
-                    <Label htmlFor="descricao">Descrição</Label>
-                    <Input type="text" id="descricao" name="descricao" value={peca.descricao} onChange={handleChange} required />
-                </FormGroup>
-                <FormGroup>
-                    <Label htmlFor="fabricante">Fabricante</Label>
-                    <Input type="text" id="fabricante" name="fabricante" value={peca.fabricante} onChange={handleChange} />
-                </FormGroup>
-                <FormGroup>
-                    <Label htmlFor="modelo">Modelo</Label>
-                    <Input type="text" id="modelo" name="modelo" value={peca.modelo} onChange={handleChange} />
-                </FormGroup>
-                <FormGroup>
-                    <Label htmlFor="codigo">Código</Label>
-                    <Input type="text" id="codigo" name="codigo" value={peca.codigo} onChange={handleChange} />
-                </FormGroup>
-                <FormGroup>
-                    <Label htmlFor="preco">Preço</Label>
-                    <Input type="number" step="0.01" id="preco" name="preco" value={peca.preco} onChange={handleChange} required />
-                </FormGroup>
-                <FormGroup>
-                    <Label htmlFor="estoque">Estoque</Label>
-                    <Input type="number" id="estoque" name="estoque" value={peca.estoque} onChange={handleChange} required />
-                </FormGroup>
-                <Button type="submit">Salvar Alterações</Button>
-            </Form>
+            <PageHeader>
+                <Title>Editar Peça</Title>
+                <HeaderActions>
+                    <Button as={Link} to="/admin/pecas" variant="secondary">
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="peca-form">
+                        Salvar Alterações
+                    </Button>
+                </HeaderActions>
+            </PageHeader>
+            <Card>
+                <Form onSubmit={handleSubmit} id="peca-form">
+                    <FormGrid>
+                        <FormGroup style={{ gridColumn: '1 / -1' }}>
+                            <Label htmlFor="descricao">Descrição</Label>
+                            <Input type="text" id="descricao" name="descricao" value={peca.descricao} onChange={handleChange} required />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="codigo">Código</Label>
+                            <Input type="text" id="codigo" name="codigo" value={peca.codigo} onChange={handleChange} />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="preco">Preço</Label>
+                            <Input type="number" step="0.01" id="preco" name="preco" value={peca.preco} onChange={handleChange} required />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="estoque">Estoque</Label>
+                            <Input type="number" id="estoque" name="estoque" value={peca.estoque} onChange={handleChange} required />
+                        </FormGroup>
+                    </FormGrid>
+                </Form>
+            </Card>
         </PageContainer>
     );
 };

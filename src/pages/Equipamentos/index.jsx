@@ -6,6 +6,7 @@ import * as equipamentoService from '../../services/equipamentoService';
 import * as clienteService from '../../services/clienteService';
 import { Table, Th, Td, Tr, ActionLink, ActionButton, ButtonGroup, PageHeader, Title, CreateButton, RefreshButton, HeaderActions } from '../../styles/common';
 import Modal from '../../components/Modal';
+import AlertModal from '../../components/AlertModal';
 import Spinner from '../../components/Spinner';
 
 const TableWrapper = styled.div`
@@ -32,6 +33,7 @@ function EquipamentosPage() {
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [equipamentoToDelete, setEquipamentoToDelete] = useState(null);
+    const [alert, setAlert] = useState({ isOpen: false, message: '' });
     const navigate = useNavigate();
 
     const fetchData = useCallback(async () => {
@@ -85,8 +87,9 @@ function EquipamentosPage() {
             await equipamentoService.deleteEquipamento(equipamentoToDelete.id);
             setEquipamentos(prev => prev.filter(e => e.id !== equipamentoToDelete.id));
         } catch (err) {
-            setError('Erro ao excluir equipamento.');
-            console.error(err);
+            console.error('Erro ao excluir equipamento:', err);
+            const errorMessage = err.response?.data?.message || 'Falha ao excluir o equipamento. Verifique se ele não está associado a ordens de serviço.';
+            setAlert({ isOpen: true, message: errorMessage });
         } finally {
             setIsModalOpen(false);
             setEquipamentoToDelete(null);
@@ -161,6 +164,12 @@ function EquipamentosPage() {
                 <p>Tem certeza que deseja excluir o equipamento <strong>{equipamentoToDelete?.marcaModelo}</strong>?</p>
                 <p>Esta ação não pode ser desfeita.</p>
             </Modal>
+            <AlertModal
+                isOpen={alert.isOpen}
+                onClose={() => setAlert({ isOpen: false, message: '' })}
+                title="Erro ao Excluir"
+                message={alert.message}
+            />
         </>
     );
 }

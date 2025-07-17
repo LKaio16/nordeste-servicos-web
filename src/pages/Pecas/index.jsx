@@ -5,6 +5,7 @@ import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import * as pecaService from '../../services/pecaService';
 import { Table, Th, Td, Tr, ButtonGroup, ActionLink, ActionButton, PageHeader, Title, CreateButton, RefreshButton, HeaderActions } from '../../styles/common';
 import Modal from '../../components/Modal';
+import AlertModal from '../../components/AlertModal';
 import Spinner from '../../components/Spinner';
 
 const TableWrapper = styled.div`
@@ -30,6 +31,7 @@ function PecasPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
+    const [alert, setAlert] = useState({ isOpen: false, message: '' });
 
     const fetchPecas = useCallback(async () => {
         try {
@@ -68,7 +70,8 @@ function PecasPage() {
                 setPecas(prev => prev.filter(p => p.id !== pecaToDelete.id));
             } catch (err) {
                 console.error('Erro ao deletar peça:', err);
-                setError("Falha ao excluir a peça.");
+                const errorMessage = err.response?.data?.message || 'Falha ao excluir a peça. Verifique se ela não está associada a orçamentos ou ordens de serviço.';
+                setAlert({ isOpen: true, message: errorMessage });
             } finally {
                 setIsModalOpen(false);
                 setPecaToDelete(null);
@@ -151,6 +154,12 @@ function PecasPage() {
             >
                 <p>Deseja realmente excluir a peça <strong>"{pecaToDelete?.descricao}"</strong>?</p>
             </Modal>
+            <AlertModal
+                isOpen={alert.isOpen}
+                onClose={() => setAlert({ isOpen: false, message: '' })}
+                title="Erro ao Excluir"
+                message={alert.message}
+            />
         </>
     );
 };

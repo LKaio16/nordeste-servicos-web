@@ -5,6 +5,7 @@ import { FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import * as clienteService from '../../services/clienteService';
 import { Table, Th, Td, Tr, ButtonGroup, ActionButton, ActionLink, PageHeader, Title, CreateButton, RefreshButton, HeaderActions } from '../../styles/common';
 import Modal from '../../components/Modal';
+import AlertModal from '../../components/AlertModal';
 import Spinner from '../../components/Spinner';
 
 const TableWrapper = styled.div`
@@ -31,6 +32,7 @@ const Clientes = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
+    const [alert, setAlert] = useState({ isOpen: false, message: '' });
     const navigate = useNavigate();
 
     const fetchClientes = useCallback(async () => {
@@ -74,7 +76,8 @@ const Clientes = () => {
                 setClientes(prev => prev.filter(c => c.id !== clienteToDelete.id));
             } catch (err) {
                 console.error('Erro ao deletar cliente:', err);
-                setError('Falha ao excluir o cliente.');
+                const errorMessage = err.response?.data?.message || 'Falha ao excluir o cliente. Verifique se ele não está associado a equipamentos ou ordens de serviço.';
+                setAlert({ isOpen: true, message: errorMessage });
             } finally {
                 setIsModalOpen(false);
                 setClienteToDelete(null);
@@ -148,6 +151,12 @@ const Clientes = () => {
             >
                 <p>Deseja realmente excluir o cliente <strong>"{clienteToDelete?.nomeCompleto}"</strong>?</p>
             </Modal>
+            <AlertModal
+                isOpen={alert.isOpen}
+                onClose={() => setAlert({ isOpen: false, message: '' })}
+                title="Erro ao Excluir"
+                message={alert.message}
+            />
         </>
     );
 };
