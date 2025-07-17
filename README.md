@@ -107,8 +107,6 @@ A aplicação frontend estará acessível em `http://localhost:5173` (ou outra p
 
 ## 📸 Screenshots
 
-*(Aqui você pode adicionar screenshots da sua aplicação para torná-la mais visual)*
-
 <div align="center">
   <img src="public/print_login.jpg" alt="Tela de Login" width="400"/>
   <img src="public/print_dashboard.jpg" alt="Dashboard" width="400"/>
