@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icon.png" alt="Nordeste Serviços Logo" width="150"/>
+  <img src="public/icon.jpg" alt="Nordeste Serviços Logo" width="150"/>
   <h1>Nordeste Serviços</h1>
   <p>Sistema de Gestão de Ordens de Serviço</p>
 </div>
