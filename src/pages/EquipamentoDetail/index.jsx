@@ -1,81 +1,161 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    ArrowLeftOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ToolOutlined,
+    UserOutlined,
+    InfoCircleOutlined
+} from '@ant-design/icons';
 import * as equipamentoService from '../../services/equipamentoService';
 import * as clienteService from '../../services/clienteService';
-import Modal from '../../components/Modal';
-import Spinner from '../../components/Spinner';
-import { FiArrowLeft } from 'react-icons/fi';
 import {
-    PageContainer,
-    PageHeader,
-    Title,
+    Card,
     Button,
-    HeaderActions
-} from '../../styles/common';
+    Typography,
+    Space,
+    message,
+    Spin,
+    Row,
+    Col,
+    Divider,
+    Descriptions,
+    Popconfirm
+} from 'antd';
 import styled from 'styled-components';
 
-const BackButton = styled.button`
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    font-size: 1.5rem;
-    color: #4A5568;
-    margin-right: 0.75rem;
+const { Title, Text } = Typography;
 
-    &:hover {
-        color: #2D3748;
+// Styled Components
+const PageContainer = styled.div`
+    padding: 0 24px 24px 24px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+`;
+
+const StyledCard = styled(Card)`
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 24px;
+    
+    .ant-card-body {
+        padding: 32px;
     }
+`;
+
+const HeaderContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
 `;
 
 const TitleContainer = styled.div`
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    gap: 16px;
 `;
 
-const Card = styled.div`
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+const TitleStyled = styled(Title)`
+    color: #00529b !important;
+    margin: 0 !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+const ActionButtons = styled(Space)`
+    .ant-btn {
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        
+        &.ant-btn-primary {
+            background: linear-gradient(135deg, #00529b 0%, #0066cc 100%);
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 82, 155, 0.3);
+            
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 82, 155, 0.4);
+            }
+        }
+        
+        &.ant-btn-default {
+            border: 2px solid #d9d9d9;
+            color: #666;
+            
+            &:hover {
+                border-color: #00529b;
+                color: #00529b;
+            }
+        }
+        
+        &.ant-btn-dangerous {
+            border-color: #ff4d4f;
+            color: #ff4d4f;
+            
+            &:hover {
+                background: #ff4d4f;
+                border-color: #ff4d4f;
+                color: white;
+            }
+        }
+    }
 `;
 
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+const LoadingContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    
+    .ant-spin {
+        margin-bottom: 16px;
+    }
+    
+    .loading-text {
+        color: #00529b;
+        font-size: 18px;
+        font-weight: 600;
+    }
 `;
 
-const DetailItem = styled.div`
-  display: flex;
-  flex-direction: column;
+const SectionTitle = styled(Title)`
+    color: #00529b !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    margin-bottom: 20px !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 `;
 
-const DetailLabel = styled.span`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-`;
-
-const DetailValue = styled.span`
-  font-size: 1rem;
-  color: #1f2937;
-  font-weight: 500;
+const InfoCard = styled.div`
+    background: linear-gradient(135deg, #f8f9ff 0%, #e6f7ff 100%);
+    border: 1px solid #d6e4ff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    
+    .info-label {
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    
+    .info-value {
+        color: #00529b;
+        font-size: 16px;
+        font-weight: 600;
+    }
 `;
 
 function EquipamentoDetailPage() {
@@ -84,8 +164,6 @@ function EquipamentoDetailPage() {
     const [equipamento, setEquipamento] = useState(null);
     const [cliente, setCliente] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchEquipamentoDetails = async () => {
@@ -98,7 +176,7 @@ function EquipamentoDetailPage() {
                     setCliente(clienteData);
                 }
             } catch (err) {
-                setError('Falha ao carregar os detalhes do equipamento.');
+                message.error('Falha ao carregar os detalhes do equipamento.');
                 console.error(err);
             } finally {
                 setIsLoading(false);
@@ -113,83 +191,155 @@ function EquipamentoDetailPage() {
     const handleDelete = async () => {
         try {
             await equipamentoService.deleteEquipamento(id);
+            message.success('Equipamento excluído com sucesso!');
             navigate('/admin/equipamentos');
         } catch (err) {
             console.error('Erro ao deletar equipamento:', err);
-            alert('Falha ao deletar equipamento.');
-        } finally {
-            setIsModalOpen(false);
+            message.error('Falha ao deletar equipamento.');
         }
     };
 
-    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
-    if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
-    if (!equipamento) return <PageContainer><p>Equipamento não encontrado.</p></PageContainer>;
+    if (isLoading) {
+        return (
+            <PageContainer>
+                <LoadingContainer>
+                    <Spin size="large" />
+                    <div className="loading-text">Carregando detalhes do equipamento...</div>
+                </LoadingContainer>
+            </PageContainer>
+        );
+    }
+
+    if (!equipamento) {
+        return (
+            <PageContainer>
+                <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <Text style={{ fontSize: '18px', color: '#666' }}>Equipamento não encontrado</Text>
+                </div>
+            </PageContainer>
+        );
+    }
 
     return (
         <PageContainer>
-            <PageHeader>
-                <TitleContainer>
-                    <BackButton onClick={() => navigate(-1)}>
-                        <FiArrowLeft />
-                    </BackButton>
-                    <Title>Detalhes do Equipamento</Title>
-                </TitleContainer>
-                <HeaderActions>
-                    <Button as={Link} to={`/admin/equipamentos/editar/${id}`}>Editar</Button>
-                    <Button variant="danger" onClick={() => setIsModalOpen(true)}>Excluir</Button>
-                </HeaderActions>
-            </PageHeader>
+            <StyledCard>
+                <HeaderContainer>
+                    <TitleContainer>
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={() => navigate(-1)}
+                            type="text"
+                            style={{ padding: '4px 8px' }}
+                        />
+                        <TitleStyled level={2}>
+                            <Space>
+                                <ToolOutlined />
+                                <span>Detalhes do Equipamento</span>
+                            </Space>
+                        </TitleStyled>
+                    </TitleContainer>
+                    <ActionButtons>
+                        <Button
+                            icon={<EditOutlined />}
+                            onClick={() => navigate(`/admin/equipamentos/editar/${id}`)}
+                        >
+                            Editar
+                        </Button>
+                        <Popconfirm
+                            title="Excluir Equipamento"
+                            description={`Deseja realmente excluir o equipamento "${equipamento.marcaModelo}"?`}
+                            onConfirm={handleDelete}
+                            okText="Sim"
+                            cancelText="Não"
+                            okType="danger"
+                        >
+                            <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                            >
+                                Excluir
+                            </Button>
+                        </Popconfirm>
+                    </ActionButtons>
+                </HeaderContainer>
 
-            <Card>
-                <SectionTitle>{equipamento.marcaModelo}</SectionTitle>
-                <InfoGrid>
-                    <DetailItem>
-                        <DetailLabel>Tipo</DetailLabel>
-                        <DetailValue>{equipamento.tipo}</DetailValue>
-                    </DetailItem>
-                    <DetailItem>
-                        <DetailLabel>Número de Série/Chassi</DetailLabel>
-                        <DetailValue>{equipamento.numeroSerieChassi}</DetailValue>
-                    </DetailItem>
-                </InfoGrid>
-            </Card>
+                <Row gutter={[24, 24]}>
+                    <Col xs={24} lg={12}>
+                        <StyledCard>
+                            <SectionTitle level={3}>
+                                <Space>
+                                    <ToolOutlined />
+                                    <span>Informações do Equipamento</span>
+                                </Space>
+                            </SectionTitle>
 
-            <Card>
-                <SectionTitle>Cliente</SectionTitle>
-                <InfoGrid>
-                    <DetailItem>
-                        <DetailLabel>Nome</DetailLabel>
-                        <DetailValue>
-                            {cliente ? (
-                                <Link to={`/admin/clientes/detalhes/${cliente.id}`}>{cliente.nomeCompleto}</Link>
-                            ) : (
-                                'Nenhum cliente vinculado'
+                            <InfoCard>
+                                <div className="info-label">Tipo</div>
+                                <div className="info-value">{equipamento.tipo}</div>
+                            </InfoCard>
+
+                            <InfoCard>
+                                <div className="info-label">Marca/Modelo</div>
+                                <div className="info-value">{equipamento.marcaModelo}</div>
+                            </InfoCard>
+
+                            <InfoCard>
+                                <div className="info-label">Número de Série/Chassi</div>
+                                <div className="info-value">{equipamento.numeroSerieChassi || 'N/A'}</div>
+                            </InfoCard>
+
+                            {equipamento.horimetro && (
+                                <InfoCard>
+                                    <div className="info-label">Horímetro</div>
+                                    <div className="info-value">{equipamento.horimetro} horas</div>
+                                </InfoCard>
                             )}
-                        </DetailValue>
-                    </DetailItem>
-                </InfoGrid>
-            </Card>
+                        </StyledCard>
+                    </Col>
 
-            <Card>
-                <SectionTitle>Outras Informações</SectionTitle>
-                <InfoGrid>
-                    <DetailItem>
-                        <DetailLabel>Observações</DetailLabel>
-                        <DetailValue>{equipamento.observacoes || 'N/A'}</DetailValue>
-                    </DetailItem>
-                </InfoGrid>
-            </Card>
+                    <Col xs={24} lg={12}>
+                        <StyledCard>
+                            <SectionTitle level={3}>
+                                <Space>
+                                    <UserOutlined />
+                                    <span>Cliente Proprietário</span>
+                                </Space>
+                            </SectionTitle>
 
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onConfirm={handleDelete}
-                title="Confirmar Exclusão"
-            >
-                <p>Tem certeza que deseja excluir o equipamento <strong>{equipamento?.marcaModelo}</strong>?</p>
-                <p>Esta ação não pode ser desfeita.</p>
-            </Modal>
+                            {cliente ? (
+                                <InfoCard>
+                                    <div className="info-label">Nome Completo</div>
+                                    <div className="info-value">{cliente.nomeCompleto}</div>
+                                </InfoCard>
+                            ) : (
+                                <InfoCard>
+                                    <div className="info-label">Cliente</div>
+                                    <div className="info-value" style={{ color: '#999' }}>Nenhum cliente vinculado</div>
+                                </InfoCard>
+                            )}
+                        </StyledCard>
+                    </Col>
+
+                    {equipamento.observacoes && (
+                        <Col xs={24}>
+                            <StyledCard>
+                                <SectionTitle level={3}>
+                                    <Space>
+                                        <InfoCircleOutlined />
+                                        <span>Observações</span>
+                                    </Space>
+                                </SectionTitle>
+
+                                <InfoCard>
+                                    <div className="info-value" style={{ lineHeight: '1.6' }}>
+                                        {equipamento.observacoes}
+                                    </div>
+                                </InfoCard>
+                            </StyledCard>
+                        </Col>
+                    )}
+                </Row>
+            </StyledCard>
         </PageContainer>
     );
 }

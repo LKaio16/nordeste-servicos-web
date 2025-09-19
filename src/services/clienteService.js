@@ -23,4 +23,11 @@ export const updateCliente = async (id, clienteData) => {
 export const deleteCliente = async (id) => {
     const response = await api.delete(`/api/clientes/${id}`);
     return response.data;
+};
+
+export const downloadClientesExcel = async () => {
+    const response = await api.get('/api/clientes/download', {
+        responseType: 'blob'
+    });
+    return response.data;
 }; 

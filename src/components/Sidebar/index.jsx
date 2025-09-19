@@ -200,6 +200,37 @@ const navLinks = [
 function Sidebar({ isOpen, setIsOpen }) {
   const { user, logout } = useAuth();
 
+  // Função para tratar imagens base64
+  const getImageSrc = (imageData) => {
+    if (!imageData) return null;
+
+    // Se já é uma URL completa, retorna como está
+    if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+      return imageData;
+    }
+
+    // Se é base64, adiciona o prefixo data:image
+    if (imageData.startsWith('data:image/')) {
+      return imageData;
+    }
+
+    // Se é base64 sem prefixo, adiciona o prefixo
+    if (imageData.startsWith('/9j/') || imageData.startsWith('iVBORw0KGgo') || imageData.startsWith('R0lGOD')) {
+      return `data:image/jpeg;base64,${imageData}`;
+    }
+
+    // Se não reconhece o formato, tenta adicionar o prefixo base64
+    // Vamos tentar diferentes formatos
+    try {
+      // Tenta como JPEG primeiro
+      const jpegSrc = `data:image/jpeg;base64,${imageData}`;
+      return jpegSrc;
+    } catch (error) {
+      console.error('Erro ao processar imagem base64:', error);
+      return null;
+    }
+  };
+
   return (
     <SidebarWrapper>
       <SidebarContainer isOpen={isOpen}>
@@ -216,11 +247,18 @@ function Sidebar({ isOpen, setIsOpen }) {
         </NavList>
         <UserCard>
           <UserAvatar>
-            {user?.fotoPerfil ? (
-              <img src={`data:image/jpeg;base64,${user.fotoPerfil}`} alt="Avatar" />
-            ) : (
-              <FiUser />
-            )}
+            {getImageSrc(user?.fotoPerfil) ? (
+              <img
+                src={getImageSrc(user.fotoPerfil)}
+                alt="Avatar"
+                onError={(e) => {
+                  console.log('Erro ao carregar imagem do usuário:', e);
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <FiUser style={{ display: getImageSrc(user?.fotoPerfil) ? 'none' : 'flex' }} />
           </UserAvatar>
           {isOpen && (
             <UserInfo>

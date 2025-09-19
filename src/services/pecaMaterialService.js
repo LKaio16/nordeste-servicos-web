@@ -20,6 +20,36 @@ const createPeca = async (pecaData) => {
     }
 };
 
+const getPecaById = async (id) => {
+    try {
+        const response = await api.get(`/api/pecas-materiais/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar peça por ID:", error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível carregar a peça.");
+    }
+};
+
+const updatePeca = async (id, pecaData) => {
+    try {
+        const response = await api.put(`/api/pecas-materiais/${id}`, pecaData);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao atualizar peça:", error.response?.data || error.message);
+        throw error.response?.data || new Error("Falha ao atualizar a peça.");
+    }
+};
+
+const deletePeca = async (id) => {
+    try {
+        const response = await api.delete(`/api/pecas-materiais/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao deletar peça:", error.response?.data || error.message);
+        throw error.response?.data || new Error("Falha ao excluir a peça.");
+    }
+};
+
 const checkCodigoExists = async (codigo) => {
     try {
         const response = await api.get('/api/pecas-materiais');
@@ -34,6 +64,9 @@ const checkCodigoExists = async (codigo) => {
 
 export const pecaMaterialService = {
     getAllPecasMateriais,
+    getPecaById,
     createPeca,
+    updatePeca,
+    deletePeca,
     checkCodigoExists
 }; 

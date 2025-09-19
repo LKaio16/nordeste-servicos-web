@@ -5,14 +5,14 @@ import {
     ArrowLeftOutlined,
     EditOutlined,
     DeleteOutlined,
-    UserOutlined,
-    IdcardOutlined,
-    PhoneOutlined,
-    MailOutlined,
-    HomeOutlined,
+    ToolOutlined,
+    DollarOutlined,
+    ShopOutlined,
+    BarcodeOutlined,
+    SettingOutlined,
     InfoCircleOutlined
 } from '@ant-design/icons';
-import { getClienteById, deleteCliente } from '../../services/clienteService';
+import { pecaMaterialService } from '../../services/pecaMaterialService';
 import {
     Card,
     Button,
@@ -22,8 +22,7 @@ import {
     Spin,
     Row,
     Col,
-    Divider,
-    Descriptions,
+    Tag,
     Popconfirm
 } from 'antd';
 
@@ -178,40 +177,92 @@ const InfoCard = styled.div`
   }
 `;
 
-function ClienteDetailPage() {
+const PriceCard = styled.div`
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #00529b;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  
+  .price-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  .price-value {
+    font-size: 24px;
+    color: #00529b;
+    font-weight: 700;
+  }
+`;
+
+const StockCard = styled.div`
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #00529b;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  
+  .stock-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  .stock-value {
+    font-size: 24px;
+    color: #00529b;
+    font-weight: 700;
+  }
+`;
+
+function PecaDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [cliente, setCliente] = useState(null);
+    const [peca, setPeca] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchCliente = async () => {
+        const fetchPeca = async () => {
             try {
-                const data = await getClienteById(id);
-                setCliente(data);
+                const data = await pecaMaterialService.getPecaById(id);
+                setPeca(data);
             } catch (err) {
                 console.error(err);
-                message.error('Falha ao carregar dados do cliente.');
+                message.error('Falha ao carregar dados da peça.');
             } finally {
                 setIsLoading(false);
             }
         };
 
         if (id) {
-            fetchCliente();
+            fetchPeca();
         }
     }, [id]);
 
     const handleDelete = async () => {
         try {
-            await deleteCliente(id);
-            message.success('Cliente excluído com sucesso!');
-            navigate('/admin/clientes');
+            await pecaMaterialService.deletePeca(id);
+            message.success('Peça excluída com sucesso!');
+            navigate('/admin/pecas');
         } catch (err) {
-            console.error('Erro ao deletar cliente:', err);
-            const errorMessage = err.response?.data?.message || 'Falha ao excluir o cliente. Verifique se ele não está associado a equipamentos ou ordens de serviço.';
+            console.error('Erro ao deletar peça:', err);
+            const errorMessage = err.response?.data?.message || 'Falha ao excluir a peça. Verifique se ela não está associada a orçamentos ou ordens de serviço.';
             message.error(errorMessage);
         }
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+    };
+
+    const getStockColor = (stock) => {
+        if (stock > 10) return 'green';
+        if (stock > 5) return 'orange';
+        return 'red';
     };
 
     if (isLoading) {
@@ -219,23 +270,21 @@ function ClienteDetailPage() {
             <PageContainer>
                 <LoadingContainer>
                     <Spin size="large" />
-                    <Text>Carregando dados do cliente...</Text>
+                    <Text>Carregando dados da peça...</Text>
                 </LoadingContainer>
             </PageContainer>
         );
     }
 
-    if (!cliente) {
+    if (!peca) {
         return (
             <PageContainer>
                 <LoadingContainer>
-                    <Text>Cliente não encontrado.</Text>
+                    <Text>Peça não encontrada.</Text>
                 </LoadingContainer>
             </PageContainer>
         );
     }
-
-    const tipoClienteLabel = cliente.tipoCliente === 'PESSOA_FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica';
 
     return (
         <PageContainer>
@@ -249,8 +298,8 @@ function ClienteDetailPage() {
                     />
                     <TitleStyled level={2}>
                         <Space>
-                            <UserOutlined />
-                            <span>Detalhes do Cliente</span>
+                            <ToolOutlined />
+                            <span>Detalhes da Peça</span>
                         </Space>
                     </TitleStyled>
                 </TitleContainer>
@@ -258,13 +307,13 @@ function ClienteDetailPage() {
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
-                        onClick={() => navigate(`/admin/clientes/editar/${id}`)}
+                        onClick={() => navigate(`/admin/pecas/editar/${id}`)}
                     >
                         Editar
                     </Button>
                     <Popconfirm
-                        title="Excluir Cliente"
-                        description={`Deseja realmente excluir o cliente "${cliente.nomeCompleto}"? Esta ação não pode ser desfeita.`}
+                        title="Excluir Peça"
+                        description={`Deseja realmente excluir a peça "${peca.descricao}"? Esta ação não pode ser desfeita.`}
                         onConfirm={handleDelete}
                         okText="Sim"
                         cancelText="Não"
@@ -283,8 +332,8 @@ function ClienteDetailPage() {
             <StyledCard
                 title={
                     <Space>
-                        <UserOutlined />
-                        <span>{cliente.nomeCompleto}</span>
+                        <ToolOutlined />
+                        <span>{peca.descricao}</span>
                     </Space>
                 }
             >
@@ -295,104 +344,73 @@ function ClienteDetailPage() {
                 <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
                         <InfoCard>
-                            <div className="info-label">CPF/CNPJ</div>
-                            <div className="info-value">{cliente.cpfCnpj}</div>
+                            <div className="info-label">Descrição</div>
+                            <div className="info-value">{peca.descricao}</div>
                         </InfoCard>
                     </Col>
                     <Col xs={24} md={12}>
                         <InfoCard>
-                            <div className="info-label">Tipo de Cliente</div>
-                            <div className="info-value">{tipoClienteLabel}</div>
+                            <div className="info-label">Código</div>
+                            <div className="info-value">{peca.codigo}</div>
                         </InfoCard>
                     </Col>
+                    {peca.fabricante && (
+                        <Col xs={24} md={12}>
+                            <InfoCard>
+                                <div className="info-label">Fabricante</div>
+                                <div className="info-value">{peca.fabricante}</div>
+                            </InfoCard>
+                        </Col>
+                    )}
+                    {peca.modelo && (
+                        <Col xs={24} md={12}>
+                            <InfoCard>
+                                <div className="info-label">Modelo</div>
+                                <div className="info-value">{peca.modelo}</div>
+                            </InfoCard>
+                        </Col>
+                    )}
                 </Row>
             </StyledCard>
 
-            <StyledCard
-                title={
-                    <Space>
-                        <PhoneOutlined />
-                        <span>Contato</span>
-                    </Space>
-                }
-            >
-                <Row gutter={[16, 16]}>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Telefone Principal</div>
-                            <div className="info-value">{cliente.telefonePrincipal}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Telefone Adicional</div>
-                            <div className="info-value">{cliente.telefoneAdicional || 'N/A'}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Email</div>
-                            <div className="info-value">{cliente.email}</div>
-                        </InfoCard>
-                    </Col>
-                </Row>
-            </StyledCard>
-
-            <StyledCard
-                title={
-                    <Space>
-                        <HomeOutlined />
-                        <span>Endereço</span>
-                    </Space>
-                }
-            >
-                <Row gutter={[16, 16]}>
-                    <Col xs={24} md={12}>
-                        <InfoCard>
-                            <div className="info-label">Rua</div>
-                            <div className="info-value">{cliente.rua}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={6}>
-                        <InfoCard>
-                            <div className="info-label">Número</div>
-                            <div className="info-value">{cliente.numero}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={6}>
-                        <InfoCard>
-                            <div className="info-label">CEP</div>
-                            <div className="info-value">{cliente.cep}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Complemento</div>
-                            <div className="info-value">{cliente.complemento || 'N/A'}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Bairro</div>
-                            <div className="info-value">{cliente.bairro}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Cidade</div>
-                            <div className="info-value">{cliente.cidade}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <InfoCard>
-                            <div className="info-label">Estado</div>
-                            <div className="info-value">{cliente.estado}</div>
-                        </InfoCard>
-                    </Col>
-                </Row>
-            </StyledCard>
+            <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                    <StyledCard
+                        title={
+                            <Space>
+                                <DollarOutlined />
+                                <span>Preço</span>
+                            </Space>
+                        }
+                    >
+                        <PriceCard>
+                            <div className="price-label">Preço de Venda</div>
+                            <div className="price-value">{formatPrice(peca.preco)}</div>
+                        </PriceCard>
+                    </StyledCard>
+                </Col>
+                <Col xs={24} md={12}>
+                    <StyledCard
+                        title={
+                            <Space>
+                                <ShopOutlined />
+                                <span>Estoque</span>
+                            </Space>
+                        }
+                    >
+                        <StockCard>
+                            <div className="stock-label">Quantidade Disponível</div>
+                            <div className="stock-value">
+                                <Tag color={getStockColor(peca.estoque)} size="large">
+                                    {peca.estoque} unidades
+                                </Tag>
+                            </div>
+                        </StockCard>
+                    </StyledCard>
+                </Col>
+            </Row>
         </PageContainer>
     );
 }
 
-export default ClienteDetailPage; 
+export default PecaDetailPage;

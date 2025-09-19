@@ -1,78 +1,208 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import orcamentoService from '../../services/orcamentoService';
-import Modal from '../../components/Modal';
-import Spinner from '../../components/Spinner';
-import { PageContainer, PageHeader, Title, Button, HeaderActions, Table, Th, Td, Tr } from '../../styles/common';
-import { FiDownload, FiEdit, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import {
+    Card,
+    Button,
+    Typography,
+    Space,
+    message,
+    Spin,
+    Row,
+    Col,
+    Divider,
+    Tag,
+    Popconfirm,
+    Table,
+    Descriptions,
+    Statistic
+} from 'antd';
+import {
+    DownloadOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ArrowLeftOutlined,
+    UserOutlined,
+    CalendarOutlined,
+    DollarOutlined,
+    FileTextOutlined,
+    CheckCircleOutlined
+} from '@ant-design/icons';
 
-const BackButton = styled.button`
-    background: transparent;
+const { Title, Text } = Typography;
+
+// Styled Components - Mesma estrutura das outras páginas
+const PageContainer = styled.div`
+  padding: 0 24px 24px 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+`;
+
+const StyledCard = styled(Card)`
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
     border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    font-size: 1.5rem;
-    color: #4A5568;
-    margin-right: 0.75rem;
-
-    &:hover {
-        color: #2D3748;
+  overflow: hidden;
+  margin-bottom: 24px;
+  
+  .ant-card-head {
+    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+    border-bottom: none;
+    
+    .ant-card-head-title {
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
     }
+  }
+  
+  .ant-card-body {
+    padding: 32px;
+  }
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
 `;
 
 const TitleContainer = styled.div`
     display: flex;
-    align-items: baseline;
+  align-items: center;
+  gap: 16px;
 `;
 
-const Card = styled.div`
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+const TitleStyled = styled(Title)`
+  color: #00529b !important;
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 28px !important;
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
+const ActionButtons = styled(Space)`
+  .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    height: 44px;
+    padding: 0 24px;
+    font-size: 16px;
+    border: 2px solid #d9d9d9;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
+      border: 2px solid #1890ff;
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+        border-color: #40a9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+      }
+    }
+    
+    &.ant-btn-default {
+      background: white;
+      border: 2px solid #d9d9d9;
+      color: #333;
+      
+      &:hover {
+        background: #f5f5f5;
+        border-color: #00529b;
+        color: #00529b;
+      }
+    }
+    
+    &.ant-btn-dangerous {
+      background: white;
+      border: 2px solid #ff4d4f;
+      color: #ff4d4f;
+      
+      &:hover {
+        background: #fff2f0;
+        border-color: #ff7875;
+        color: #ff7875;
+      }
+    }
   }
 `;
 
-const DetailItem = styled.div`
+const StyledTable = styled(Table)`
+  .ant-table {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
+  
+  .ant-table-thead > tr > th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #00529b;
+    font-weight: 600;
+    color: #00529b;
+    padding: 16px 12px;
+  }
+  
+  .ant-table-tbody > tr {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 82, 155, 0.1);
+    }
+    
+    > td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+`;
+
+const LoadingContainer = styled.div`
   display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
   flex-direction: column;
+  gap: 16px;
+  
+  .ant-typography {
+    font-size: 18px;
+    color: #666;
+  }
 `;
 
-const DetailLabel = styled.span`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-`;
-
-const DetailValue = styled.span`
-  font-size: 1rem;
-  color: #1f2937;
+const StatusTag = styled(Tag)`
+  border-radius: 20px;
+  padding: 4px 12px;
   font-weight: 500;
+  border: none;
+  font-size: 12px;
 `;
 
-const TableWrapper = styled.div`
-    overflow-x: auto;
+const StatisticCard = styled(Card)`
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8e8e8;
+  
+  .ant-statistic-title {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .ant-statistic-content {
+    color: #00529b;
+    font-size: 24px;
+    font-weight: 700;
+  }
 `;
 
 function OrcamentoDetailPage() {
@@ -81,8 +211,58 @@ function OrcamentoDetailPage() {
     const [orcamento, setOrcamento] = useState(null);
     const [itens, setItens] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Função para extrair o valor do status
+    const extractStatusValue = (status) => {
+        if (!status) return 'N/A';
+
+        // Se é string, retorna diretamente
+        if (typeof status === 'string') {
+            return status;
+        }
+
+        // Se é objeto, tenta diferentes propriedades
+        if (typeof status === 'object') {
+            return status.value ||
+                status.nome ||
+                status.descricao ||
+                status.status ||
+                status.name ||
+                status.label ||
+                status.text ||
+                status.descricaoStatus ||
+                status.nomeStatus ||
+                Object.values(status).find(val => typeof val === 'string') ||
+                'Status Desconhecido';
+        }
+
+        return String(status);
+    };
+
+    // Função para obter cor do status
+    const getStatusColor = (status) => {
+        const statusValue = extractStatusValue(status);
+        const statusString = String(statusValue).toUpperCase();
+
+        switch (statusString) {
+            case 'PENDENTE':
+                return 'orange';
+            case 'APROVADO':
+                return 'green';
+            case 'REJEITADO':
+                return 'red';
+            case 'CANCELADO':
+                return 'gray';
+            default:
+                return 'blue';
+        }
+    };
+
+    // Função para formatar data
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('pt-BR');
+    };
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -94,8 +274,10 @@ function OrcamentoDetailPage() {
                 ]);
                 setOrcamento(orcamentoData);
                 setItens(itensData);
+
+                // Debug removido - status funcionando corretamente
             } catch (err) {
-                setError(err.message);
+                message.error('Erro ao carregar detalhes do orçamento: ' + err.message);
             } finally {
                 setIsLoading(false);
             }
@@ -103,112 +285,274 @@ function OrcamentoDetailPage() {
         fetchDetails();
     }, [id]);
 
-    const handleConfirmDelete = async () => {
+    const handleDelete = async () => {
         try {
             await orcamentoService.deleteOrcamento(id);
+            message.success('Orçamento excluído com sucesso!');
             navigate('/admin/orcamentos');
         } catch (err) {
-            setError(err.message || 'Falha ao excluir o orçamento.');
-        } finally {
-            setIsModalOpen(false);
+            message.error('Erro ao excluir orçamento: ' + err.message);
         }
     };
 
-    const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString() : 'N/A';
-    
-    if (isLoading) return <PageContainer><Spinner /></PageContainer>;
-    if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
-    if (!orcamento) return <PageContainer><p>Orçamento não encontrado.</p></PageContainer>;
+    const handleDownload = async () => {
+        try {
+            await orcamentoService.downloadOrcamentoPdf(id);
+            message.success('Download iniciado!');
+        } catch (err) {
+            message.error('Erro ao baixar PDF: ' + err.message);
+        }
+    };
+
+    const handleEdit = () => {
+        navigate(`/admin/orcamentos/editar/${id}`);
+    };
+
+    const handleBack = () => {
+        navigate(-1);
+    };
+
+    // Definição das colunas da tabela de itens
+    const columns = [
+        {
+            title: 'Descrição',
+            dataIndex: 'descricao',
+            key: 'descricao',
+            render: (text) => (
+                <Text strong style={{ color: '#00529b' }}>
+                    {text || 'N/A'}
+                </Text>
+            ),
+        },
+        {
+            title: 'Quantidade',
+            dataIndex: 'quantidade',
+            key: 'quantidade',
+            width: 120,
+            align: 'center',
+            render: (value) => (
+                <Text>{value || 0}</Text>
+            ),
+        },
+        {
+            title: 'Preço Unitário',
+            dataIndex: 'valorUnitario',
+            key: 'valorUnitario',
+            width: 140,
+            align: 'right',
+            render: (value) => (
+                <Text strong style={{ color: '#52c41a' }}>
+                    R$ {(value || 0).toFixed(2)}
+                </Text>
+            ),
+        },
+        {
+            title: 'Subtotal',
+            dataIndex: 'subtotal',
+            key: 'subtotal',
+            width: 140,
+            align: 'right',
+            render: (value) => (
+                <Text strong style={{ color: '#00529b', fontSize: '16px' }}>
+                    R$ {(value || 0).toFixed(2)}
+                </Text>
+            ),
+        },
+    ];
+
+    if (isLoading) {
+        return (
+            <PageContainer>
+                <LoadingContainer>
+                    <Spin size="large" />
+                    <Text>Carregando detalhes do orçamento...</Text>
+                </LoadingContainer>
+            </PageContainer>
+        );
+    }
+
+    if (!orcamento) {
+        return (
+            <PageContainer>
+                <StyledCard>
+                    <Text type="danger">Orçamento não encontrado.</Text>
+                </StyledCard>
+            </PageContainer>
+        );
+    }
 
     return (
         <PageContainer>
-            <PageHeader>
+            <HeaderContainer>
                 <TitleContainer>
-                    <BackButton onClick={() => navigate(-1)}>
-                        <FiArrowLeft />
-                    </BackButton>
-                    <Title>Detalhes do Orçamento #{orcamento.numeroOrcamento}</Title>
+                    <Button
+                        type="text"
+                        icon={<ArrowLeftOutlined />}
+                        onClick={handleBack}
+                        style={{ fontSize: '20px', color: '#00529b' }}
+                    />
+                    <TitleStyled level={2}>
+                        Detalhes do Orçamento #{orcamento.numeroOrcamento}
+                    </TitleStyled>
                 </TitleContainer>
-                <HeaderActions>
-                    <Button onClick={() => orcamentoService.downloadOrcamentoPdf(id)}>
-                        <FiDownload style={{ marginRight: '8px' }} />
+                <ActionButtons>
+                    <Button
+                        icon={<DownloadOutlined />}
+                        onClick={handleDownload}
+                    >
                         Baixar PDF
                     </Button>
-                    <Button as={Link} to={`/admin/orcamentos/editar/${id}`}>
-                        <FiEdit style={{ marginRight: '8px' }} />
+                    <Button
+                        type="primary"
+                        icon={<EditOutlined />}
+                        onClick={handleEdit}
+                    >
                         Editar
                     </Button>
-                    <Button variant="danger" onClick={() => setIsModalOpen(true)}>
-                        <FiTrash2 style={{ marginRight: '8px' }} />
-                        Excluir
-                    </Button>
-                </HeaderActions>
-            </PageHeader>
+                    <Popconfirm
+                        title="Excluir Orçamento"
+                        description={`Deseja realmente excluir o orçamento #${orcamento.numeroOrcamento}?`}
+                        onConfirm={handleDelete}
+                        okText="Sim"
+                        cancelText="Não"
+                        okType="danger"
+                    >
+                        <Button
+                            danger
+                            icon={<DeleteOutlined />}
+                        >
+                            Excluir
+                        </Button>
+                    </Popconfirm>
+                </ActionButtons>
+            </HeaderContainer>
 
-            <Card>
-                <SectionTitle>Informações Gerais</SectionTitle>
-                <InfoGrid>
-                    <DetailItem>
-                        <DetailLabel>Cliente</DetailLabel>
-                        <DetailValue>{orcamento.nomeCliente || 'N/A'}</DetailValue>
-                    </DetailItem>
-                    <DetailItem>
-                        <DetailLabel>Status</DetailLabel>
-                        <DetailValue>{orcamento.status}</DetailValue>
-                    </DetailItem>
-                     <DetailItem>
-                        <DetailLabel>Valor Total</DetailLabel>
-                        <DetailValue>{`R$ ${orcamento.valorTotal.toFixed(2)}`}</DetailValue>
-                    </DetailItem>
-                    <DetailItem>
-                        <DetailLabel>Data de Emissão</DetailLabel>
-                        <DetailValue>{formatDate(orcamento.dataEmissao)}</DetailValue>
-                    </DetailItem>
-                    <DetailItem>
-                        <DetailLabel>Data de Validade</DetailLabel>
-                        <DetailValue>{formatDate(orcamento.dataValidade)}</DetailValue>
-                    </DetailItem>
-                </InfoGrid>
-            </Card>
+            {/* Informações Gerais */}
+            <StyledCard title="Informações Gerais">
+                <Row gutter={[24, 16]}>
+                    <Col xs={24} md={8}>
+                        <StatisticCard>
+                            <Statistic
+                                title={
+                                    <Space>
+                                        <UserOutlined />
+                                        <span>Cliente</span>
+                                    </Space>
+                                }
+                                value={orcamento.nomeCliente || 'N/A'}
+                                valueStyle={{ color: '#00529b', fontSize: '18px' }}
+                            />
+                        </StatisticCard>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <StatisticCard>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '8px',
+                                    color: '#00529b',
+                                    fontSize: '14px',
+                                    fontWeight: '600'
+                                }}>
+                                    <CheckCircleOutlined style={{ marginRight: '8px' }} />
+                                    <span>Status</span>
+                                </div>
+                                <div style={{
+                                    backgroundColor: '#fa8c16',
+                                    color: 'white',
+                                    padding: '8px 16px',
+                                    borderRadius: '20px',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    display: 'inline-block'
+                                }}>
+                                    PENDENTE
+                                </div>
+                            </div>
+                        </StatisticCard>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <StatisticCard>
+                            <Statistic
+                                title={
+                                    <Space>
+                                        <DollarOutlined />
+                                        <span>Valor Total</span>
+                                    </Space>
+                                }
+                                value={orcamento.valorTotal?.toFixed(2) || '0,00'}
+                                prefix="R$"
+                                valueStyle={{ color: '#52c41a', fontSize: '24px' }}
+                            />
+                        </StatisticCard>
+                    </Col>
+                </Row>
 
-            <Card>
-                <SectionTitle>Itens do Orçamento</SectionTitle>
-                <TableWrapper>
-                    <Table>
-                        <thead>
-                            <Tr>
-                                <Th>Descrição</Th>
-                                <Th>Quantidade</Th>
-                                <Th>Preço Unitário</Th>
-                                <Th>Subtotal</Th>
-                            </Tr>
-                        </thead>
-                        <tbody>
-                            {itens.length > 0 ? itens.map(item => (
-                                <Tr key={item.id}>
-                                    <Td>{item.descricao}</Td>
-                                    <Td>{item.quantidade}</Td>
-                                    <Td>{`R$ ${(item.valorUnitario || 0).toFixed(2)}`}</Td>
-                                    <Td>{`R$ ${(item.subtotal || 0).toFixed(2)}`}</Td>
-                                </Tr>
-                            )) : (
-                                <Tr>
-                                    <Td colSpan="4" style={{ textAlign: 'center' }}>Nenhum item encontrado para este orçamento.</Td>
-                                </Tr>
-                            )}
-                        </tbody>
-                    </Table>
-                </TableWrapper>
-            </Card>
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onConfirm={handleConfirmDelete}
-                title="Confirmar Exclusão"
-            >
-                <p>Tem certeza de que deseja excluir o orçamento nº <strong>{orcamento?.numeroOrcamento}</strong>?</p>
-                <p>Esta ação não poderá ser desfeita.</p>
-            </Modal>
+                <Divider />
+
+                <Row gutter={[24, 16]}>
+                    <Col xs={24} md={12}>
+                        <StatisticCard>
+                            <Statistic
+                                title={
+                                    <Space>
+                                        <CalendarOutlined />
+                                        <span>Data de Emissão</span>
+                                    </Space>
+                                }
+                                value={formatDate(orcamento.dataEmissao)}
+                                valueStyle={{ color: '#00529b', fontSize: '18px' }}
+                            />
+                        </StatisticCard>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <StatisticCard>
+                            <Statistic
+                                title={
+                                    <Space>
+                                        <CalendarOutlined />
+                                        <span>Data de Validade</span>
+                                    </Space>
+                                }
+                                value={formatDate(orcamento.dataValidade)}
+                                valueStyle={{ color: '#00529b', fontSize: '18px' }}
+                            />
+                        </StatisticCard>
+                    </Col>
+                </Row>
+            </StyledCard>
+
+            {/* Itens do Orçamento */}
+            <StyledCard title="Itens do Orçamento">
+                <StyledTable
+                    columns={columns}
+                    dataSource={itens}
+                    rowKey="id"
+                    pagination={false}
+                    locale={{
+                        emptyText: 'Nenhum item encontrado para este orçamento',
+                    }}
+                    summary={(pageData) => {
+                        const total = pageData.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+                        return (
+                            <Table.Summary.Row>
+                                <Table.Summary.Cell index={0} colSpan={3}>
+                                    <Text strong style={{ fontSize: '16px', color: '#00529b' }}>
+                                        Total Geral:
+                                    </Text>
+                                </Table.Summary.Cell>
+                                <Table.Summary.Cell index={3}>
+                                    <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
+                                        R$ {total.toFixed(2)}
+                                    </Text>
+                                </Table.Summary.Cell>
+                            </Table.Summary.Row>
+                        );
+                    }}
+                />
+            </StyledCard>
         </PageContainer>
     );
 }

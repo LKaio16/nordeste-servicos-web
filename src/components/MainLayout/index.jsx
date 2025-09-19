@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Sidebar from '../Sidebar';
+import Breadcrumb from '../Breadcrumb';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -58,6 +59,7 @@ function MainLayout() {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
       <Overlay isOpen={isSidebarOpen} onClick={() => setSidebarOpen(false)} />
       <ContentContainer isOpen={isSidebarOpen}>
+        <Breadcrumb />
         <Outlet />
       </ContentContainer>
     </LayoutContainer>

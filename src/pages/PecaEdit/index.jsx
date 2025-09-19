@@ -1,137 +1,375 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import * as pecaService from '../../services/pecaService';
-import {
-    PageContainer,
-    Title,
-    Form,
-    FormGroup,
-    Label,
-    Input,
-    Button,
-    PageHeader,
-    HeaderActions
-} from '../../styles/common';
+import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import Spinner from '../../components/Spinner';
+import {
+    ArrowLeftOutlined,
+    SaveOutlined,
+    ToolOutlined,
+    EditOutlined,
+    DollarOutlined,
+    ShopOutlined,
+    BarcodeOutlined,
+    SettingOutlined
+} from '@ant-design/icons';
+import { pecaMaterialService } from '../../services/pecaMaterialService';
+import {
+    Card,
+    Button,
+    Typography,
+    Space,
+    message,
+    Spin,
+    Form,
+    Input,
+    Row,
+    Col
+} from 'antd';
 
-const Card = styled.div`
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 2rem;
+// Styled Components
+const PageContainer = styled.div`
+  padding: 0 24px 24px 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
 `;
 
-const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    @media (min-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
+const StyledCard = styled(Card)`
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
+  border: none;
+  overflow: hidden;
+  margin-bottom: 24px;
+  
+  .ant-card-head {
+    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+    border-bottom: none;
+    
+    .ant-card-head-title {
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
     }
+  }
+  
+  .ant-card-body {
+    padding: 0 24px 24px 24px;
+  }
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  color: #333;
+`;
+
+const TitleStyled = styled(Typography.Title)`
+  color: #00529b !important;
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 28px !important;
+`;
+
+const ActionButtons = styled(Space)`
+  .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    height: 40px;
+    padding: 0 20px;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
+      border: none;
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+      }
+    }
+    
+    &.ant-btn-default {
+      background: white;
+      border: 1px solid #d9d9d9;
+      color: #333;
+      
+      &:hover {
+        background: #f5f5f5;
+        border-color: #00529b;
+        color: #00529b;
+      }
+    }
+  }
+`;
+
+const StyledForm = styled(Form)`
+  .ant-form-item-label > label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .ant-input {
+    height: 48px;
+    font-size: 16px;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    
+    &:hover {
+      border-color: #00529b;
+    }
+    
+    &:focus,
+    &.ant-input-focused {
+      border-color: #00529b;
+      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.2);
+    }
+  }
+  
+  .ant-btn {
+    height: 48px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 2px solid #d9d9d9;
+    font-weight: 600;
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+  
+  .ant-spin {
+    .ant-spin-text {
+      font-size: 18px;
+      color: #00529b;
+      font-weight: 500;
+    }
+  }
 `;
 
 function PecaEdit() {
     const { id } = useParams();
-    const [peca, setPeca] = useState({
-        descricao: '',
-        codigo: '',
-        preco: '',
-        estoque: ''
-    });
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [form] = Form.useForm();
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchPeca = async () => {
             try {
-                const data = await pecaService.getPecaById(id);
-                setPeca({
+                const data = await pecaMaterialService.getPecaById(id);
+                form.setFieldsValue({
                     descricao: data.descricao || '',
                     codigo: data.codigo || '',
                     preco: data.preco || '',
-                    estoque: data.estoque || ''
+                    estoque: data.estoque || '',
+                    fabricante: data.fabricante || '',
+                    modelo: data.modelo || ''
                 });
             } catch (error) {
                 console.error('Erro ao buscar dados da peça:', error);
-                setError('Não foi possível carregar os dados da peça.');
+                message.error('Não foi possível carregar os dados da peça.');
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchPeca();
-    }, [id]);
+        if (id) {
+            fetchPeca();
+        }
+    }, [id, form]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setPeca(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (values) => {
+        setIsSubmitting(true);
         try {
             const pecaData = {
-                ...peca,
-                preco: parseFloat(peca.preco),
-                estoque: parseInt(peca.estoque, 10)
+                ...values,
+                preco: parseFloat(values.preco),
+                estoque: parseInt(values.estoque, 10)
             };
-            await pecaService.updatePeca(id, pecaData);
+            await pecaMaterialService.updatePeca(id, pecaData);
+            message.success('Peça atualizada com sucesso!');
             navigate('/admin/pecas');
         } catch (error) {
             console.error('Erro ao atualizar peça:', error);
-            alert('Falha ao atualizar peça. Verifique o console para mais detalhes.');
+            message.error('Falha ao atualizar peça.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     if (isLoading) {
-        return <PageContainer><Spinner /></PageContainer>;
-    }
-
-    if (error) {
-        return <PageContainer><p style={{ color: 'red' }}>{error}</p></PageContainer>;
+        return (
+            <PageContainer>
+                <LoadingContainer>
+                    <Spin size="large" />
+                    <Typography.Text>Carregando dados da peça...</Typography.Text>
+                </LoadingContainer>
+            </PageContainer>
+        );
     }
 
     return (
         <PageContainer>
-            <PageHeader>
-                <Title>Editar Peça</Title>
-                <HeaderActions>
-                    <Button as={Link} to="/admin/pecas" variant="secondary">
-                        Cancelar
+            <HeaderContainer>
+                <TitleStyled level={2}>
+                    <Space>
+                        <ToolOutlined />
+                        <span>Editar Peça</span>
+                    </Space>
+                </TitleStyled>
+                <ActionButtons>
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => navigate(-1)}
+                    >
+                        Voltar
                     </Button>
-                    <Button type="submit" form="peca-form">
-                        Salvar Alterações
-                    </Button>
-                </HeaderActions>
-            </PageHeader>
-            <Card>
-                <Form onSubmit={handleSubmit} id="peca-form">
-                    <FormGrid>
-                        <FormGroup style={{ gridColumn: '1 / -1' }}>
-                            <Label htmlFor="descricao">Descrição</Label>
-                            <Input type="text" id="descricao" name="descricao" value={peca.descricao} onChange={handleChange} required />
-                        </FormGroup>
-                        <FormGroup>
-                            <Label htmlFor="codigo">Código</Label>
-                            <Input type="text" id="codigo" name="codigo" value={peca.codigo} onChange={handleChange} />
-                        </FormGroup>
-                        <FormGroup>
-                            <Label htmlFor="preco">Preço</Label>
-                            <Input type="number" step="0.01" id="preco" name="preco" value={peca.preco} onChange={handleChange} required />
-                        </FormGroup>
-                        <FormGroup>
-                            <Label htmlFor="estoque">Estoque</Label>
-                            <Input type="number" id="estoque" name="estoque" value={peca.estoque} onChange={handleChange} required />
-                        </FormGroup>
-                    </FormGrid>
-                </Form>
-            </Card>
+                </ActionButtons>
+            </HeaderContainer>
+
+            <StyledCard
+                title={
+                    <Space>
+                        <EditOutlined />
+                        <span>Dados da Peça</span>
+                    </Space>
+                }
+            >
+                <StyledForm
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleSubmit}
+                >
+                    <Form.Item
+                        name="descricao"
+                        label="Descrição"
+                        rules={[
+                            { required: true, message: 'Por favor, insira a descrição da peça!' },
+                            { min: 2, message: 'Descrição deve ter pelo menos 2 caracteres!' },
+                            { max: 200, message: 'Descrição deve ter no máximo 200 caracteres!' }
+                        ]}
+                    >
+                        <Input
+                            prefix={<ToolOutlined />}
+                            placeholder="Digite a descrição da peça"
+                            showCount
+                            maxLength={200}
+                        />
+                    </Form.Item>
+
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="codigo"
+                                label="Código"
+                                rules={[
+                                    { max: 50, message: 'Código deve ter no máximo 50 caracteres!' }
+                                ]}
+                            >
+                                <Input
+                                    prefix={<BarcodeOutlined />}
+                                    placeholder="Digite o código da peça (opcional)"
+                                    showCount
+                                    maxLength={50}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="fabricante"
+                                label="Fabricante"
+                                rules={[
+                                    { max: 100, message: 'Fabricante deve ter no máximo 100 caracteres!' }
+                                ]}
+                            >
+                                <Input
+                                    prefix={<SettingOutlined />}
+                                    placeholder="Digite o fabricante (opcional)"
+                                    showCount
+                                    maxLength={100}
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="modelo"
+                                label="Modelo"
+                                rules={[
+                                    { max: 100, message: 'Modelo deve ter no máximo 100 caracteres!' }
+                                ]}
+                            >
+                                <Input
+                                    prefix={<SettingOutlined />}
+                                    placeholder="Digite o modelo (opcional)"
+                                    showCount
+                                    maxLength={100}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="preco"
+                                label="Preço"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o preço!' },
+                                    { pattern: /^\d+(\.\d{1,2})?$/, message: 'Digite um preço válido (ex: 10.50)' }
+                                ]}
+                            >
+                                <Input
+                                    prefix={<DollarOutlined />}
+                                    placeholder="Digite o preço"
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item
+                        name="estoque"
+                        label="Estoque"
+                        rules={[
+                            { required: true, message: 'Por favor, insira a quantidade em estoque!' },
+                            { pattern: /^\d+$/, message: 'Digite um número válido (ex: 10)' }
+                        ]}
+                    >
+                        <Input
+                            prefix={<ShopOutlined />}
+                            placeholder="Digite a quantidade em estoque"
+                            type="number"
+                            min={0}
+                        />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            icon={<SaveOutlined />}
+                            loading={isSubmitting}
+                            size="large"
+                            block
+                        >
+                            {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                    </Form.Item>
+                </StyledForm>
+            </StyledCard>
         </PageContainer>
     );
 };

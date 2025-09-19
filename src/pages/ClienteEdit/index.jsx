@@ -1,48 +1,183 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import styled from 'styled-components';
+import {
+    ArrowLeftOutlined,
+    SaveOutlined,
+    UserOutlined,
+    EditOutlined,
+    IdcardOutlined,
+    PhoneOutlined,
+    MailOutlined,
+    HomeOutlined
+} from '@ant-design/icons';
 import { getClienteById, updateCliente } from '../../services/clienteService';
 import {
-    PageContainer,
-    Title,
-    Form,
-    FormGroup,
-    Label,
-    Input,
+    Card,
     Button,
+    Typography,
+    Space,
+    message,
+    Form,
+    Input,
     Select,
-    PageHeader,
-    HeaderActions
-} from '../../styles/common';
-import styled from 'styled-components';
-import Spinner from '../../components/Spinner';
+    Row,
+    Col,
+    Spin
+} from 'antd';
 
 
-const Card = styled.div`
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 2rem;
+const { Title, Text } = Typography;
+
+// Styled Components
+const PageContainer = styled.div`
+  padding: 0 24px 24px 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
 `;
 
-const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    @media (min-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
+const StyledCard = styled(Card)`
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
+  border: none;
+  overflow: hidden;
+  
+  .ant-card-head {
+    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+    border-bottom: none;
+    
+    .ant-card-head-title {
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
     }
+  }
+  
+  .ant-card-body {
+    padding: 0 24px 24px 24px;
+  }
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 1.25rem;
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  color: #333;
+`;
+
+const TitleStyled = styled(Title)`
+  color: #00529b !important;
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 28px !important;
+`;
+
+const ActionButtons = styled(Space)`
+  .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    height: 48px;
+    padding: 0 20px;
+    font-size: 16px;
+    border: 2px solid #d9d9d9;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
+      border: none;
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+      }
+    }
+    
+    &.ant-btn-default {
+      background: white;
+      border: 2px solid #d9d9d9;
+      color: #333;
+      
+      &:hover {
+        background: #f5f5f5;
+        border-color: #00529b;
+        color: #00529b;
+      }
+    }
+  }
+`;
+
+const StyledForm = styled(Form)`
+  .ant-form-item-label > label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .ant-input,
+  .ant-select-selector {
+    height: 48px;
+    font-size: 16px;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    
+    &:hover {
+      border-color: #00529b;
+    }
+    
+    &:focus,
+    &.ant-input-focused,
+    &.ant-select-focused .ant-select-selector {
+      border-color: #00529b;
+      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.2);
+    }
+  }
+  
+  .ant-select-selector {
+    height: 48px !important;
+    
+    .ant-select-selection-item {
+      line-height: 44px;
+    }
+  }
+  
+  .ant-form-item-explain-error {
+    font-size: 14px;
+  }
+`;
+
+const SectionTitle = styled.div`
+  font-size: 18px;
   font-weight: 600;
-  color: #111827;
-  grid-column: 1 / -1;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  color: #00529b;
+  margin: 24px 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+  
+  .ant-spin {
+    .ant-spin-text {
+      font-size: 18px;
+      color: #00529b;
+      font-weight: 500;
+    }
+  }
 `;
 
 // --- Helper functions for masks ---
@@ -81,21 +216,24 @@ const formatCPF_CNPJ = (value) => {
 function ClienteEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [cliente, setCliente] = useState(null);
+    const [form] = Form.useForm();
+    const [clienteData, setClienteData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchCliente = async () => {
             if (!id) {
                 setIsLoading(false);
-                setError("ID do cliente não fornecido.");
+                message.error("ID do cliente não fornecido.");
                 return;
             }
             try {
                 const data = await getClienteById(id);
-                // Apply masks to data coming from API
-                setCliente({
+                setClienteData(data);
+
+                // Apply masks to data coming from API and set form values
+                form.setFieldsValue({
                     ...data,
                     cep: formatCEP(data.cep || ''),
                     cpfCnpj: formatCPF_CNPJ(data.cpfCnpj || ''),
@@ -104,148 +242,326 @@ function ClienteEdit() {
                 });
             } catch (err) {
                 console.error('Erro ao buscar dados do cliente:', err);
-                setError('Não foi possível carregar os dados do cliente.');
+                message.error('Não foi possível carregar os dados do cliente.');
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchCliente();
-    }, [id]);
+    }, [id, form]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        let formattedValue = value;
-
-        switch (name) {
-            case 'cep':
-                formattedValue = formatCEP(value);
-                break;
-            case 'telefonePrincipal':
-            case 'telefoneAdicional':
-                formattedValue = formatPhone(value);
-                break;
-            case 'cpfCnpj':
-                formattedValue = formatCPF_CNPJ(value);
-                break;
-            default:
-                break;
-        }
-        
-        setCliente(prev => ({ ...prev, [name]: formattedValue }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (values) => {
+        setIsSubmitting(true);
         try {
             // Remove masks before sending to backend
             const payload = {
-                ...cliente,
-                cep: cliente.cep.replace(/\D/g, ''),
-                cpfCnpj: cliente.cpfCnpj.replace(/\D/g, ''),
-                telefonePrincipal: cliente.telefonePrincipal.replace(/\D/g, ''),
-                telefoneAdicional: cliente.telefoneAdicional.replace(/\D/g, ''),
+                ...values,
+                cep: values.cep?.replace(/\D/g, '') || '',
+                cpfCnpj: values.cpfCnpj?.replace(/\D/g, '') || '',
+                telefonePrincipal: values.telefonePrincipal?.replace(/\D/g, '') || '',
+                telefoneAdicional: values.telefoneAdicional?.replace(/\D/g, '') || '',
             };
             await updateCliente(id, payload);
+            message.success('Cliente atualizado com sucesso!');
             navigate(`/admin/clientes/detalhes/${id}`);
         } catch (err) {
             console.error('Erro ao atualizar cliente:', err);
-            alert('Falha ao atualizar cliente.');
+            message.error('Falha ao atualizar cliente.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (isLoading) return <PageContainer><Spinner/></PageContainer>;
-    if (error) return <PageContainer><p style={{ color: 'red' }}>Erro: {error}</p></PageContainer>;
-    if (!cliente) return <PageContainer>Cliente não encontrado.</PageContainer>;
+    if (isLoading) {
+        return (
+            <PageContainer>
+                <LoadingContainer>
+                    <Spin size="large" />
+                    <Text>Carregando dados do cliente...</Text>
+                </LoadingContainer>
+            </PageContainer>
+        );
+    }
+
+    if (!clienteData) {
+        return (
+            <PageContainer>
+                <LoadingContainer>
+                    <Text>Cliente não encontrado.</Text>
+                </LoadingContainer>
+            </PageContainer>
+        );
+    }
 
     return (
         <PageContainer>
-            <PageHeader>
-                <Title>Editar Cliente</Title>
-                <HeaderActions>
-                    <Button as={Link} to={`/admin/clientes/detalhes/${id}`} variant="secondary">
-                        Cancelar
-                    </Button>
-                    <Button type="submit" form="cliente-form">
-                        Salvar
-                    </Button>
-                </HeaderActions>
-            </PageHeader>
-            <Card>
-                <Form onSubmit={handleSubmit} id="cliente-form">
-                    <FormGrid>
-                        <FormGroup style={{ gridColumn: '1 / -1' }}>
-                            <Label htmlFor="nomeCompleto">Nome Completo</Label>
-                            <Input type="text" id="nomeCompleto" name="nomeCompleto" value={cliente.nomeCompleto || ''} onChange={handleChange} required />
-                        </FormGroup>
+            <StyledCard
+                title={
+                    <Space>
+                        <UserOutlined />
+                        <span>Editar Cliente</span>
+                    </Space>
+                }
+            >
+                <HeaderContainer>
+                    <TitleStyled level={2}>
+                        <Space>
+                            <EditOutlined />
+                            <span>Editar Cliente: {clienteData.nomeCompleto}</span>
+                        </Space>
+                    </TitleStyled>
+                    <ActionButtons>
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={() => navigate(`/admin/clientes/detalhes/${id}`)}
+                        >
+                            Voltar
+                        </Button>
+                        <Button
+                            type="primary"
+                            icon={<SaveOutlined />}
+                            onClick={() => form.submit()}
+                            loading={isSubmitting}
+                        >
+                            Salvar Alterações
+                        </Button>
+                    </ActionButtons>
+                </HeaderContainer>
 
-                        <FormGroup>
-                            <Label htmlFor="tipoCliente">Tipo de Cliente</Label>
-                            <Select id="tipoCliente" name="tipoCliente" value={cliente.tipoCliente || 'PESSOA_FISICA'} onChange={handleChange}>
-                                <option value="PESSOA_FISICA">Pessoa Física</option>
-                                <option value="PESSOA_JURIDICA">Pessoa Jurídica</option>
-                            </Select>
-                        </FormGroup>
+                <StyledForm
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleSubmit}
+                >
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24}>
+                            <Form.Item
+                                name="nomeCompleto"
+                                label={
+                                    <Space>
+                                        <UserOutlined />
+                                        <span>Nome Completo</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o nome completo!' },
+                                    { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="Digite o nome completo do cliente..."
+                                    showCount
+                                    maxLength={100}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
-                            <Input type="text" id="cpfCnpj" name="cpfCnpj" value={cliente.cpfCnpj || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="tipoCliente"
+                                label={
+                                    <Space>
+                                        <IdcardOutlined />
+                                        <span>Tipo de Cliente</span>
+                                    </Space>
+                                }
+                                rules={[{ required: true, message: 'Por favor, selecione o tipo de cliente!' }]}
+                            >
+                                <Select placeholder="Selecione o tipo de cliente...">
+                                    <Select.Option value="PESSOA_FISICA">Pessoa Física</Select.Option>
+                                    <Select.Option value="PESSOA_JURIDICA">Pessoa Jurídica</Select.Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="email">Email</Label>
-                            <Input type="email" id="email" name="email" value={cliente.email || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="cpfCnpj"
+                                label={
+                                    <Space>
+                                        <IdcardOutlined />
+                                        <span>CPF/CNPJ</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o CPF ou CNPJ!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                                    onChange={(e) => {
+                                        const formatted = formatCPF_CNPJ(e.target.value);
+                                        form.setFieldsValue({ cpfCnpj: formatted });
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="telefonePrincipal">Telefone Principal</Label>
-                            <Input type="text" id="telefonePrincipal" name="telefonePrincipal" value={cliente.telefonePrincipal || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="telefonePrincipal"
+                                label={
+                                    <Space>
+                                        <PhoneOutlined />
+                                        <span>Telefone Principal</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o telefone principal!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="(00) 00000-0000"
+                                    onChange={(e) => {
+                                        const formatted = formatPhone(e.target.value);
+                                        form.setFieldsValue({ telefonePrincipal: formatted });
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="telefoneAdicional">Telefone Adicional</Label>
-                            <Input type="text" id="telefoneAdicional" name="telefoneAdicional" value={cliente.telefoneAdicional || ''} onChange={handleChange} />
-                        </FormGroup>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="telefoneAdicional"
+                                label={
+                                    <Space>
+                                        <PhoneOutlined />
+                                        <span>Telefone Adicional</span>
+                                    </Space>
+                                }
+                            >
+                                <Input
+                                    placeholder="(00) 00000-0000"
+                                    onChange={(e) => {
+                                        const formatted = formatPhone(e.target.value);
+                                        form.setFieldsValue({ telefoneAdicional: formatted });
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <SectionTitle>Endereço</SectionTitle>
+                        <Col xs={24}>
+                            <Form.Item
+                                name="email"
+                                label={
+                                    <Space>
+                                        <MailOutlined />
+                                        <span>Email</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o email!' },
+                                    { type: 'email', message: 'Por favor, insira um email válido!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="Digite o email do cliente..."
+                                    type="email"
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="cep">CEP</Label>
-                            <Input type="text" id="cep" name="cep" value={cliente.cep || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24}>
+                            <SectionTitle>
+                                <HomeOutlined />
+                                <span>Endereço</span>
+                            </SectionTitle>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="rua">Rua</Label>
-                            <Input type="text" id="rua" name="rua" value={cliente.rua || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={8}>
+                            <Form.Item
+                                name="cep"
+                                label="CEP"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o CEP!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="00000-000"
+                                    onChange={(e) => {
+                                        const formatted = formatCEP(e.target.value);
+                                        form.setFieldsValue({ cep: formatted });
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="numero">Número</Label>
-                            <Input type="text" id="numero" name="numero" value={cliente.numero || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={16}>
+                            <Form.Item
+                                name="rua"
+                                label="Rua"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira a rua!' }
+                                ]}
+                            >
+                                <Input placeholder="Digite o nome da rua..." />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="complemento">Complemento</Label>
-                            <Input type="text" id="complemento" name="complemento" value={cliente.complemento || ''} onChange={handleChange} />
-                        </FormGroup>
+                        <Col xs={24} md={8}>
+                            <Form.Item
+                                name="numero"
+                                label="Número"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o número!' }
+                                ]}
+                            >
+                                <Input placeholder="Digite o número..." />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="bairro">Bairro</Label>
-                            <Input type="text" id="bairro" name="bairro" value={cliente.bairro || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={16}>
+                            <Form.Item
+                                name="complemento"
+                                label="Complemento"
+                            >
+                                <Input placeholder="Digite o complemento (opcional)..." />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="cidade">Cidade</Label>
-                            <Input type="text" id="cidade" name="cidade" value={cliente.cidade || ''} onChange={handleChange} required />
-                        </FormGroup>
+                        <Col xs={24} md={8}>
+                            <Form.Item
+                                name="bairro"
+                                label="Bairro"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o bairro!' }
+                                ]}
+                            >
+                                <Input placeholder="Digite o bairro..." />
+                            </Form.Item>
+                        </Col>
 
-                        <FormGroup>
-                            <Label htmlFor="estado">Estado (UF)</Label>
-                            <Input type="text" id="estado" name="estado" value={cliente.estado || ''} onChange={handleChange} required maxLength="2" />
-                        </FormGroup>
-                    </FormGrid>
-                </Form>
-            </Card>
+                        <Col xs={24} md={8}>
+                            <Form.Item
+                                name="cidade"
+                                label="Cidade"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira a cidade!' }
+                                ]}
+                            >
+                                <Input placeholder="Digite a cidade..." />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} md={8}>
+                            <Form.Item
+                                name="estado"
+                                label="Estado (UF)"
+                                rules={[
+                                    { required: true, message: 'Por favor, insira o estado!' },
+                                    { max: 2, message: 'O estado deve ter no máximo 2 caracteres!' }
+                                ]}
+                            >
+                                <Input
+                                    placeholder="Ex: SP, RJ, MG..."
+                                    maxLength={2}
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                </StyledForm>
+            </StyledCard>
         </PageContainer>
     );
 };

@@ -1,26 +1,189 @@
 import { useState, useEffect, useCallback } from 'react';
 import orcamentoService from '../../services/orcamentoService';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiEdit, FiTrash2, FiDownload, FiRefreshCw } from 'react-icons/fi';
-import Modal from '../../components/Modal';
-import Spinner from '../../components/Spinner';
-import { Table, Th, Td, Tr, ActionButton, ActionLink, PageHeader, Title, CreateButton, ButtonGroup, RefreshButton, HeaderActions } from '../../styles/common';
+import { FiEdit, FiTrash2, FiDownload, FiRefreshCw, FiUser, FiDollarSign } from 'react-icons/fi';
+import {
+    Table,
+    Button,
+    Space,
+    Popconfirm,
+    message,
+    Card,
+    Typography,
+    Tag,
+    Tooltip,
+    Spin,
+    Badge,
+    Avatar,
+    ConfigProvider
+} from 'antd';
+import {
+    FileTextOutlined,
+    ReloadOutlined,
+    PlusOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    DownloadOutlined,
+    UserOutlined,
+    DollarOutlined,
+    EyeOutlined
+} from '@ant-design/icons';
 import styled from 'styled-components';
 
-const TableWrapper = styled.div`
-    overflow-x: auto;
+const { Title, Text } = Typography;
+
+// Styled Components - Mesma estrutura da página de OS
+const PageContainer = styled.div`
+  padding: 0 24px 24px 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
 `;
 
-const ThMobileHidden = styled(Th)`
-    @media (max-width: 768px) {
-        display: none;
+const StyledCard = styled(Card)`
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
+  border: none;
+  overflow: hidden;
+  
+  .ant-card-head {
+    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+    border-bottom: none;
+    
+    .ant-card-head-title {
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
     }
+  }
+  
+  .ant-card-body {
+    padding: 0 24px 24px 24px;
+  }
 `;
 
-const TdMobileHidden = styled(Td)`
-    @media (max-width: 768px) {
-        display: none;
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  color: #333;
+`;
+
+const TitleStyled = styled(Title)`
+  color: #00529b !important;
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 28px !important;
+`;
+
+const ActionButtons = styled(Space)`
+  .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    height: 40px;
+    padding: 0 20px;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
+      border: none;
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+      }
     }
+    
+    &.ant-btn-default {
+      background: white;
+      border: 1px solid #d9d9d9;
+      color: #333;
+      
+      &:hover {
+        background: #f5f5f5;
+        border-color: #00529b;
+        color: #00529b;
+      }
+    }
+  }
+`;
+
+const StyledTable = styled(Table)`
+  .ant-table {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
+  
+  .ant-table-thead > tr > th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #00529b;
+    font-weight: 600;
+    color: #00529b;
+    padding: 16px 12px;
+  }
+  
+  .ant-table-tbody > tr {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 82, 155, 0.1);
+    }
+    
+    > td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+  
+  .ant-table-pagination {
+    margin-top: 24px;
+    text-align: center;
+  }
+`;
+
+const StatusTag = styled(Tag)`
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-weight: 500;
+  border: none;
+  font-size: 12px;
+`;
+
+const ActionButton = styled(Button)`
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const ClientInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .client-name {
+    font-weight: 500;
+    color: #00529b;
+  }
+`;
+
+const ValueInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #52c41a;
 `;
 
 function OrcamentosPage() {
@@ -28,9 +191,38 @@ function OrcamentosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [orcamentoToDelete, setOrcamentoToDelete] = useState(null);
     const navigate = useNavigate();
+
+    // Função para obter cor do status
+    const getStatusColor = (status) => {
+        switch (status?.toUpperCase()) {
+            case 'PENDENTE':
+                return 'orange';
+            case 'APROVADO':
+                return 'green';
+            case 'REJEITADO':
+                return 'red';
+            case 'CANCELADO':
+                return 'gray';
+            default:
+                return 'blue';
+        }
+    };
+
+    // Função para tratar imagens base64
+    const getImageSrc = (imageData) => {
+        if (!imageData) return null;
+        if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+            return imageData;
+        }
+        if (imageData.startsWith('data:image/')) {
+            return imageData;
+        }
+        if (imageData.startsWith('/9j/') || imageData.startsWith('iVBORw0KGgo') || imageData.startsWith('R0lGOD')) {
+            return `data:image/jpeg;base64,${imageData}`;
+        }
+        return imageData;
+    };
 
     const fetchOrcamentos = useCallback(async () => {
         try {
@@ -56,104 +248,216 @@ function OrcamentosPage() {
         setIsRefreshing(false);
     };
 
-    const handleRowClick = (id) => {
-        navigate(`/admin/orcamentos/detalhes/${id}`);
+    const handleRowClick = (record) => {
+        navigate(`/admin/orcamentos/detalhes/${record.id}`);
     };
 
-    const openDeleteModal = (orcamento) => {
-        setOrcamentoToDelete(orcamento);
-        setIsModalOpen(true);
-    };
-
-    const closeDeleteModal = () => {
-        setOrcamentoToDelete(null);
-        setIsModalOpen(false);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!orcamentoToDelete) return;
+    const handleDelete = async (orcamento) => {
         try {
-            await orcamentoService.deleteOrcamento(orcamentoToDelete.id);
-            // Atualiza a lista removendo o item deletado
-            setOrcamentos(prev => prev.filter(o => o.id !== orcamentoToDelete.id));
-            closeDeleteModal();
+            await orcamentoService.deleteOrcamento(orcamento.id);
+            setOrcamentos(prev => prev.filter(o => o.id !== orcamento.id));
+            message.success('Orçamento excluído com sucesso!');
         } catch (deleteError) {
-            setError(deleteError.message);
-            closeDeleteModal();
+            message.error('Erro ao excluir orçamento: ' + deleteError.message);
         }
     };
 
+    const handleDownload = async (orcamento) => {
+        try {
+            await orcamentoService.downloadOrcamentoPdf(orcamento.id);
+            message.success('Download iniciado!');
+        } catch (downloadError) {
+            message.error('Erro ao baixar PDF: ' + downloadError.message);
+        }
+    };
 
-    const renderContent = () => {
-        if (isLoading) return (
-            <Tr>
-                <Td colSpan="6"><Spinner /></Td>
-            </Tr>
+    // Definição das colunas da tabela
+    const columns = [
+        {
+            title: 'Número',
+            dataIndex: 'numeroOrcamento',
+            key: 'numeroOrcamento',
+            width: 160,
+            render: (text) => (
+                <Typography.Text strong style={{ color: '#00529b' }}>
+                    #{text}
+                </Typography.Text>
+            ),
+        },
+        {
+            title: 'Cliente',
+            dataIndex: 'nomeCliente',
+            key: 'nomeCliente',
+            width: 200,
+            render: (text, record) => (
+                <ClientInfo>
+                    <Avatar
+                        size="small"
+                        icon={<UserOutlined />}
+                        style={{ backgroundColor: '#00529b' }}
+                    />
+                    <span className="client-name">{text || 'N/A'}</span>
+                </ClientInfo>
+            ),
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            width: 120,
+            render: (status) => (
+                <StatusTag color={getStatusColor(status)}>
+                    {status}
+                </StatusTag>
+            ),
+            filters: [
+                { text: 'Pendente', value: 'PENDENTE' },
+                { text: 'Aprovado', value: 'APROVADO' },
+                { text: 'Rejeitado', value: 'REJEITADO' },
+                { text: 'Cancelado', value: 'CANCELADO' },
+            ],
+            onFilter: (value, record) => record.status === value,
+        },
+        {
+            title: 'Valor Total',
+            dataIndex: 'valorTotal',
+            key: 'valorTotal',
+            width: 140,
+            render: (value) => (
+                <ValueInfo>
+                    <DollarOutlined />
+                    <span>R$ {value?.toFixed(2) || '0,00'}</span>
+                </ValueInfo>
+            ),
+            sorter: (a, b) => a.valorTotal - b.valorTotal,
+        },
+        {
+            title: 'Ações',
+            key: 'actions',
+            width: 180,
+            render: (_, record) => (
+                <Space size="small" onClick={(e) => e.stopPropagation()}>
+                    <Tooltip title="Ver detalhes">
+                        <ActionButton
+                            type="primary"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowClick(record);
+                            }}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Editar">
+                        <ActionButton
+                            type="default"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/admin/orcamentos/editar/${record.id}`);
+                            }}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Baixar PDF">
+                        <ActionButton
+                            type="default"
+                            size="small"
+                            icon={<DownloadOutlined />}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(record);
+                            }}
+                        />
+                    </Tooltip>
+                    <Popconfirm
+                        title="Excluir Orçamento"
+                        description={`Deseja realmente excluir o orçamento #${record.numeroOrcamento}?`}
+                        onConfirm={(e) => {
+                            e?.stopPropagation();
+                            handleDelete(record);
+                        }}
+                        okText="Sim"
+                        cancelText="Não"
+                        okType="danger"
+                    >
+                        <Tooltip title="Excluir">
+                            <ActionButton
+                                type="default"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        </Tooltip>
+                    </Popconfirm>
+                </Space>
+            ),
+        },
+    ];
+
+
+    if (error) {
+        return (
+            <PageContainer>
+                <StyledCard>
+                    <Typography.Text type="danger">{error}</Typography.Text>
+                </StyledCard>
+            </PageContainer>
         );
-        if (error) return <p style={{ color: 'red' }}>{error}</p>;
-        if (!orcamentos || orcamentos.length === 0) {
-            return (
-                <Tr><Td colSpan="5" style={{ textAlign: 'center' }}>Nenhum Orçamento encontrado.</Td></Tr>
-            );
-        }
-
-        return orcamentos.map((orcamento) => (
-            <Tr key={orcamento.id} onClick={() => handleRowClick(orcamento.id)} data-clickable="true">
-                <Td>
-                    {orcamento.numeroOrcamento}
-                </Td>
-                <TdMobileHidden>{orcamento.nomeCliente}</TdMobileHidden>
-                <Td>{orcamento.status}</Td>
-                <TdMobileHidden>{`R$ ${orcamento.valorTotal.toFixed(2)}`}</TdMobileHidden>
-                <Td>
-                    <ButtonGroup onClick={(e) => e.stopPropagation()}>
-                        <ActionLink to={`/admin/orcamentos/editar/${orcamento.id}`} title="Editar Orçamento"><FiEdit /></ActionLink>
-                        <ActionButton onClick={() => openDeleteModal(orcamento)} title="Excluir Orçamento"><FiTrash2 /></ActionButton>
-                        <ActionButton onClick={() => orcamentoService.downloadOrcamentoPdf(orcamento.id)} title="Baixar PDF"><FiDownload /></ActionButton>
-                    </ButtonGroup>
-                </Td>
-            </Tr>
-        ));
-    };
+    }
 
     return (
-        <>
-            <PageHeader>
-                <Title>Orçamentos</Title>
-                <HeaderActions>
-                    <RefreshButton onClick={handleRefresh} disabled={isRefreshing}>
-                        <FiRefreshCw />
-                        {isRefreshing ? 'Atualizando...' : 'Atualizar'}
-                    </RefreshButton>
-                    <CreateButton to="/admin/orcamentos/novo">Novo Orçamento</CreateButton>
-                </HeaderActions>
-            </PageHeader>
-            <TableWrapper>
-                <Table>
-                    <thead>
-                        <Tr>
-                            <Th>Número</Th>
-                            <ThMobileHidden>Cliente</ThMobileHidden>
-                            <ThMobileHidden>Status</ThMobileHidden>
-                            <Th>Valor Total</Th>
-                            <Th>Ações</Th>
-                        </Tr>
-                    </thead>
-                    <tbody>
-                        {renderContent()}
-                    </tbody>
-                </Table>
-            </TableWrapper>
-            <Modal
-                isOpen={isModalOpen}
-                onClose={closeDeleteModal}
-                onConfirm={handleConfirmDelete}
-                title="Confirmar Exclusão"
-            >
-                <p>Tem certeza de que deseja excluir o orçamento nº <strong>{orcamentoToDelete?.numeroOrcamento}</strong>?</p>
-                <p>Esta ação não poderá ser desfeita.</p>
-            </Modal>
-        </>
+        <PageContainer>
+            <HeaderContainer>
+                <TitleStyled level={2}>
+                    <Space>
+                        <FileTextOutlined />
+                        <span>Orçamentos</span>
+                    </Space>
+                </TitleStyled>
+                <ActionButtons>
+                    <Button
+                        icon={<ReloadOutlined />}
+                        onClick={handleRefresh}
+                        loading={isRefreshing}
+                    >
+                        Atualizar
+                    </Button>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => navigate('/admin/orcamentos/novo')}
+                    >
+                        Novo Orçamento
+                    </Button>
+                </ActionButtons>
+            </HeaderContainer>
+
+            <StyledCard>
+                <StyledTable
+                    columns={columns}
+                    dataSource={orcamentos}
+                    rowKey="id"
+                    loading={isLoading}
+                    onRow={(record) => ({
+                        onClick: () => handleRowClick(record),
+                        style: { cursor: 'pointer' }
+                    })}
+                    pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total, range) =>
+                            `${range[0]}-${range[1]} de ${total} orçamentos`,
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                    }}
+                    locale={{
+                        emptyText: 'Nenhum orçamento encontrado',
+                    }}
+                />
+            </StyledCard>
+        </PageContainer>
     );
 }
 
