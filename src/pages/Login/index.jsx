@@ -186,15 +186,31 @@ function Login() {
       await login({ email, senha });
       navigate('/admin/dashboard');
     } catch (err) {
-      if (err.response && err.response.data) {
-        setError(err.response.data); // Exibe a mensagem de erro vinda do backend
+      console.error('Erro no login:', err);
+
+      // Tratamento mais robusto de erros
+      if (err.response) {
+        // Erro de resposta do servidor
+        if (err.response.status === 401) {
+          setError('Email ou senha incorretos. Verifique suas credenciais.');
+        } else if (err.response.status === 403) {
+          setError('Acesso negado. Entre em contato com o administrador.');
+        } else if (err.response.data && typeof err.response.data === 'string') {
+          setError(err.response.data);
+        } else if (err.response.data && err.response.data.message) {
+          setError(err.response.data.message);
+        } else {
+          setError('Erro no servidor. Tente novamente mais tarde.');
+        }
+      } else if (err.request) {
+        // Erro de rede
+        setError('Erro de conexão. Verifique sua internet e tente novamente.');
       } else if (err.message) {
-        // Captura o erro lançado pelo AuthContext
+        // Erro lançado pelo AuthContext ou outros
         setError(err.message);
       } else {
-        setError('Falha na comunicação com o servidor. Tente novamente.');
+        setError('Erro inesperado. Tente novamente.');
       }
-      console.error(err);
     } finally {
       setLoading(false);
     }

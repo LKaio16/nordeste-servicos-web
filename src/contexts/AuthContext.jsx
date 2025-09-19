@@ -45,10 +45,10 @@ export const AuthProvider = ({ children }) => {
 
             localStorage.setItem('token', token);
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
+
             // Busca o perfil completo para ter todos os dados
             const fullProfile = await getUsuarioById(userData.id);
-            
+
             // Salva o perfil completo no estado
             setUser(fullProfile);
 
@@ -60,6 +60,8 @@ export const AuthProvider = ({ children }) => {
             return fullProfile;
         } catch (error) {
             console.error("Falha no login", error);
+            // Garante que o loading seja resetado em caso de erro
+            setIsLoading(false);
             // Propaga o erro para ser tratado na UI
             throw error;
         }
