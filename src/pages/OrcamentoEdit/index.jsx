@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftOutlined, SaveOutlined, UserOutlined, FileTextOutlined, CalendarOutlined, EditOutlined, PlusOutlined, DeleteOutlined, ShoppingCartOutlined, ToolOutlined, DollarOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SaveOutlined, UserOutlined, FileTextOutlined, CalendarOutlined, EditOutlined, PlusOutlined, DeleteOutlined, ShoppingCartOutlined, ToolOutlined, DollarOutlined, CheckCircleOutlined, PercentageOutlined } from '@ant-design/icons';
 import orcamentoService from '../../services/orcamentoService';
 import * as osService from '../../services/osService';
 import { pecaMaterialService } from '../../services/pecaMaterialService';
@@ -441,6 +441,19 @@ function OrcamentoEditPage() {
     const handleAddItem = () => {
         setEditingItem(null);
         itemForm.resetFields();
+        itemForm.setFieldsValue({ tipo: 'descricao' });
+        setIsItemModalVisible(true);
+    };
+
+    const handleAddDiscount = () => {
+        setEditingItem(null);
+        itemForm.resetFields();
+        itemForm.setFieldsValue({
+            tipo: 'descricao',
+            descricao: 'Desconto',
+            quantidade: 1,
+            valorUnitario: 0
+        });
         setIsItemModalVisible(true);
     };
 
@@ -509,7 +522,10 @@ function OrcamentoEditPage() {
             key: 'tipo',
             width: 100,
             render: (_, record) => {
-                if (record.pecaMaterial) {
+                const isDiscount = record.valorUnitario < 0;
+                if (isDiscount) {
+                    return <Tag color="red" icon={<PercentageOutlined />}>Desconto</Tag>;
+                } else if (record.pecaMaterial) {
                     return <Tag color="blue" icon={<ShoppingCartOutlined />}>Peça</Tag>;
                 } else if (record.tipoServico) {
                     return <Tag color="green" icon={<ToolOutlined />}>Serviço</Tag>;
@@ -563,7 +579,15 @@ function OrcamentoEditPage() {
             key: 'valorUnitario',
             width: 120,
             align: 'right',
-            render: (value) => `R$ ${value.toFixed(2).replace('.', ',')}`
+            render: (value) => {
+                const isNegative = value < 0;
+                const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
+                return (
+                    <span style={{ color: isNegative ? '#ff4d4f' : 'inherit' }}>
+                        {isNegative ? '-R$ ' : 'R$ '}{formattedValue}
+                    </span>
+                );
+            }
         },
         {
             title: 'Subtotal',
@@ -572,7 +596,13 @@ function OrcamentoEditPage() {
             align: 'right',
             render: (_, record) => {
                 const subtotal = record.quantidade * record.valorUnitario;
-                return `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+                const isNegative = subtotal < 0;
+                const formattedValue = Math.abs(subtotal).toFixed(2).replace('.', ',');
+                return (
+                    <span style={{ color: isNegative ? '#ff4d4f' : 'inherit', fontWeight: isNegative ? 600 : 'normal' }}>
+                        {isNegative ? '-R$ ' : 'R$ '}{formattedValue}
+                    </span>
+                );
             }
         },
         {
@@ -758,14 +788,28 @@ function OrcamentoEditPage() {
                                 {itens.length} item(s) adicionado(s)
                             </Text>
                         </div>
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={handleAddItem}
-                            size="large"
-                        >
-                            Adicionar Item
-                        </Button>
+                        <Space>
+                            <Button
+                                type="default"
+                                icon={<PercentageOutlined />}
+                                onClick={handleAddDiscount}
+                                size="large"
+                                style={{
+                                    borderColor: '#ff4d4f',
+                                    color: '#ff4d4f'
+                                }}
+                            >
+                                Desconto
+                            </Button>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={handleAddItem}
+                                size="large"
+                            >
+                                Adicionar Item
+                            </Button>
+                        </Space>
                     </ItemsHeader>
 
                     {itens.length > 0 ? (
@@ -939,18 +983,26 @@ function OrcamentoEditPage() {
                                 name="valorUnitario"
                                 label="Valor Unitário (R$)"
                                 rules={[
-                                    { required: true, message: 'Digite o valor unitário!' },
-                                    { type: 'number', min: 0, message: 'Valor deve ser maior ou igual a zero!' }
+                                    { required: true, message: 'Digite o valor unitário!' }
                                 ]}
                             >
                                 <InputNumber
                                     style={{ width: '100%' }}
                                     placeholder="0,00"
-                                    min={0}
                                     step={0.01}
                                     precision={2}
-                                    formatter={value => `R$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                    parser={value => value.replace(/R\$\s?|(,*)/g, '')}
+                                    formatter={value => {
+                                        if (!value) return '';
+                                        const numValue = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
+                                        const absValue = Math.abs(numValue);
+                                        const formatted = absValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                        return numValue < 0 ? `-R$ ${formatted}` : `R$ ${formatted}`;
+                                    }}
+                                    parser={value => {
+                                        if (!value) return '';
+                                        const parsed = value.replace(/R\$\s?|(,*)/g, '');
+                                        return parsed.startsWith('-') ? `-${parsed.substring(1)}` : parsed;
+                                    }}
                                 />
                             </Form.Item>
                         </Col>
