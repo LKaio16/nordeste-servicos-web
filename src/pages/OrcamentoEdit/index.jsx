@@ -355,6 +355,7 @@ function OrcamentoEditPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isItemModalVisible, setIsItemModalVisible] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [clienteId, setClienteId] = useState(null);
 
     useEffect(() => {
         const fetchOrcamentoData = async () => {
@@ -367,9 +368,13 @@ function OrcamentoEditPage() {
                     itemOrcamentoService.getItensByOrcamento(id)
                 ]);
 
-                // Formatar data para dayjs
+                // Salvar clienteId do orçamento
+                setClienteId(orcamentoData.clienteId);
+
+                // Formatar data para dayjs sem timezone
+                // Se a data vier como string YYYY-MM-DD, usamos 'YYYY-MM-DD' parser
                 const formattedDate = orcamentoData.dataValidade
-                    ? dayjs(orcamentoData.dataValidade)
+                    ? dayjs(orcamentoData.dataValidade, 'YYYY-MM-DD')
                     : null;
 
                 // Definir valores iniciais do formulário
@@ -399,14 +404,31 @@ function OrcamentoEditPage() {
         setIsSubmitting(true);
 
         try {
+            // Formatar data corretamente sem timezone issues
+            let dataValidade = null;
+            if (values.dataValidade) {
+                // Pegar diretamente o ano, mês e dia sem conversão de timezone
+                const day = String(values.dataValidade.date()).padStart(2, '0');
+                const month = String(values.dataValidade.month() + 1).padStart(2, '0');
+                const year = values.dataValidade.year();
+                dataValidade = `${year}-${month}-${day}`;
+            }
+
             const payload = {
-                ...values,
+                clienteId: clienteId,
+                status: values.status,
                 ordemServicoOrigemId: values.ordemServicoOrigemId || null,
-                dataValidade: values.dataValidade ? values.dataValidade.format('YYYY-MM-DD') : null,
+                dataValidade: dataValidade,
+                observacoesCondicoes: values.observacoesCondicoes || '',
             };
 
             await orcamentoService.updateOrcamento(id, payload);
             message.success('Orçamento atualizado com sucesso!');
+
+            // Redirecionar para a tela de detalhes após 1 segundo
+            setTimeout(() => {
+                navigate(`/admin/orcamentos/detalhes/${id}`);
+            }, 1000);
         } catch (err) {
             message.error('Falha ao atualizar o orçamento.');
             console.error(err);
@@ -694,6 +716,8 @@ function OrcamentoEditPage() {
                                     style={{ width: '100%' }}
                                     placeholder="Selecione a data de validade"
                                     format="DD/MM/YYYY"
+                                    getPopupContainer={(trigger) => trigger.parentElement}
+                                    allowClear
                                 />
                             </Form.Item>
                         </Col>

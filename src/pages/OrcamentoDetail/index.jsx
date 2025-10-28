@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import dayjs from 'dayjs';
 import orcamentoService from '../../services/orcamentoService';
 import {
     Card,
@@ -258,10 +259,11 @@ function OrcamentoDetailPage() {
         }
     };
 
-    // Função para formatar data
+    // Função para formatar data sem problemas de timezone
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('pt-BR');
+        // Parse a data como string YYYY-MM-DD para evitar conversão de timezone
+        return dayjs(dateString, 'YYYY-MM-DD').format('DD/MM/YYYY');
     };
 
     useEffect(() => {

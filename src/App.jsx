@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntApp } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
@@ -38,7 +38,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { theme } from './styles/theme';
 
-function App() {
+function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyles />
@@ -117,6 +117,14 @@ function App() {
         </ConfigProvider>
       </ErrorBoundary>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <AntApp style={{ minHeight: '100vh' }}>
+      <AppContent />
+    </AntApp>
   );
 }
 

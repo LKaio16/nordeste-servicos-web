@@ -507,10 +507,20 @@ function OrcamentoCreatePage() {
     const handleSubmit = async (values) => {
         setIsSubmitting(true);
         try {
+            // Formatar data corretamente sem timezone issues
+            let dataValidade = null;
+            if (values.dataValidade) {
+                // Pegar diretamente o ano, mês e dia sem conversão de timezone
+                const day = String(values.dataValidade.date()).padStart(2, '0');
+                const month = String(values.dataValidade.month() + 1).padStart(2, '0');
+                const year = values.dataValidade.year();
+                dataValidade = `${year}-${month}-${day}`;
+            }
+
             // Converter a data para o formato esperado
             const formData = {
                 ...values,
-                dataValidade: values.dataValidade ? values.dataValidade.format('YYYY-MM-DD') : null,
+                dataValidade: dataValidade,
                 status: values.status || 'PENDENTE'
             };
 
