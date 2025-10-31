@@ -342,11 +342,20 @@ function OrcamentoDetailPage() {
             key: 'valorUnitario',
             width: 140,
             align: 'right',
-            render: (value) => (
-                <Text strong style={{ color: '#52c41a' }}>
-                    R$ {(value || 0).toFixed(2)}
-                </Text>
-            ),
+            render: (value) => {
+                const formatCurrency = (val) => {
+                    if (val == null || val === undefined) return '0,00';
+                    const formatted = Math.abs(val).toFixed(2);
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return parts.join(',');
+                };
+                return (
+                    <Text strong style={{ color: '#52c41a' }}>
+                        R$ {formatCurrency(value)}
+                    </Text>
+                );
+            },
         },
         {
             title: 'Subtotal',
@@ -354,11 +363,20 @@ function OrcamentoDetailPage() {
             key: 'subtotal',
             width: 140,
             align: 'right',
-            render: (value) => (
-                <Text strong style={{ color: '#00529b', fontSize: '16px' }}>
-                    R$ {(value || 0).toFixed(2)}
-                </Text>
-            ),
+            render: (value) => {
+                const formatCurrency = (val) => {
+                    if (val == null || val === undefined) return '0,00';
+                    const formatted = Math.abs(val).toFixed(2);
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return parts.join(',');
+                };
+                return (
+                    <Text strong style={{ color: '#00529b', fontSize: '16px' }}>
+                        R$ {formatCurrency(value)}
+                    </Text>
+                );
+            },
         },
     ];
 
@@ -484,7 +502,16 @@ function OrcamentoDetailPage() {
                                         <span>Valor Total</span>
                                     </Space>
                                 }
-                                value={orcamento.valorTotal?.toFixed(2) || '0,00'}
+                                value={(() => {
+                                    const formatCurrency = (val) => {
+                                        if (val == null || val === undefined) return '0,00';
+                                        const formatted = Math.abs(val).toFixed(2);
+                                        const parts = formatted.split('.');
+                                        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                        return parts.join(',');
+                                    };
+                                    return formatCurrency(orcamento.valorTotal);
+                                })()}
                                 prefix="R$"
                                 valueStyle={{ color: '#52c41a', fontSize: '24px' }}
                             />
@@ -547,7 +574,16 @@ function OrcamentoDetailPage() {
                                 </Table.Summary.Cell>
                                 <Table.Summary.Cell index={3}>
                                     <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
-                                        R$ {total.toFixed(2)}
+                                        R$ {(() => {
+                                            const formatCurrency = (val) => {
+                                                if (val == null || val === undefined) return '0,00';
+                                                const formatted = Math.abs(val).toFixed(2);
+                                                const parts = formatted.split('.');
+                                                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                                return parts.join(',');
+                                            };
+                                            return formatCurrency(total);
+                                        })()}
                                     </Text>
                                 </Table.Summary.Cell>
                             </Table.Summary.Row>

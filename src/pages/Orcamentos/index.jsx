@@ -323,12 +323,21 @@ function OrcamentosPage() {
             dataIndex: 'valorTotal',
             key: 'valorTotal',
             width: 140,
-            render: (value) => (
-                <ValueInfo>
-                    <DollarOutlined />
-                    <span>R$ {value?.toFixed(2) || '0,00'}</span>
-                </ValueInfo>
-            ),
+            render: (value) => {
+                const formatCurrency = (val) => {
+                    if (val == null || val === undefined) return '0,00';
+                    const formatted = Math.abs(val).toFixed(2);
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return parts.join(',');
+                };
+                return (
+                    <ValueInfo>
+                        <DollarOutlined />
+                        <span>R$ {formatCurrency(value)}</span>
+                    </ValueInfo>
+                );
+            },
             sorter: (a, b) => a.valorTotal - b.valorTotal,
         },
         {

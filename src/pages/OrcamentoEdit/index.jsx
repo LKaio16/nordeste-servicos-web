@@ -427,7 +427,7 @@ function OrcamentoEditPage() {
 
             // Redirecionar para a tela de detalhes após 1 segundo
             setTimeout(() => {
-                navigate(`/admin/orcamentos/detalhes/${id}`);
+            navigate(`/admin/orcamentos/detalhes/${id}`);
             }, 1000);
         } catch (err) {
             message.error('Falha ao atualizar o orçamento.');
@@ -581,7 +581,14 @@ function OrcamentoEditPage() {
             align: 'right',
             render: (value) => {
                 const isNegative = value < 0;
-                const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
+                const formatCurrency = (val) => {
+                    if (val == null || val === undefined) return '0,00';
+                    const formatted = Math.abs(val).toFixed(2);
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return parts.join(',');
+                };
+                const formattedValue = formatCurrency(value);
                 return (
                     <span style={{ color: isNegative ? '#ff4d4f' : 'inherit' }}>
                         {isNegative ? '-R$ ' : 'R$ '}{formattedValue}
@@ -597,7 +604,14 @@ function OrcamentoEditPage() {
             render: (_, record) => {
                 const subtotal = record.quantidade * record.valorUnitario;
                 const isNegative = subtotal < 0;
-                const formattedValue = Math.abs(subtotal).toFixed(2).replace('.', ',');
+                const formatCurrency = (val) => {
+                    if (val == null || val === undefined) return '0,00';
+                    const formatted = Math.abs(val).toFixed(2);
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return parts.join(',');
+                };
+                const formattedValue = formatCurrency(subtotal);
                 return (
                     <span style={{ color: isNegative ? '#ff4d4f' : 'inherit', fontWeight: isNegative ? 600 : 'normal' }}>
                         {isNegative ? '-R$ ' : 'R$ '}{formattedValue}
@@ -667,16 +681,16 @@ function OrcamentoEditPage() {
                             icon={<ArrowLeftOutlined />}
                             onClick={() => navigate(`/admin/orcamentos/detalhes/${id}`)}
                         >
-                            Cancelar
-                        </Button>
+                        Cancelar
+                    </Button>
                         <Button
                             type="primary"
                             icon={<SaveOutlined />}
                             loading={isSubmitting}
                             onClick={() => form.submit()}
                         >
-                            Salvar Alterações
-                        </Button>
+                        Salvar Alterações
+                    </Button>
                     </ActionButtons>
                 </HeaderContainer>
 
@@ -703,7 +717,7 @@ function OrcamentoEditPage() {
                                     <Option value="APROVADO">Aprovado</Option>
                                     <Option value="REJEITADO">Rejeitado</Option>
                                     <Option value="CANCELADO">Cancelado</Option>
-                                </Select>
+                            </Select>
                             </Form.Item>
                         </Col>
 
@@ -723,12 +737,12 @@ function OrcamentoEditPage() {
                                     showSearch
                                     optionFilterProp="label"
                                 >
-                                    {ordensServico.map(os => (
+                                {ordensServico.map(os => (
                                         <Option key={os.id} value={os.id}>
-                                            OS nº {os.id} - ({os.cliente?.nomeCompleto || 'Cliente não informado'})
+                                        OS nº {os.id} - ({os.cliente?.nomeCompleto || 'Cliente não informado'})
                                         </Option>
-                                    ))}
-                                </Select>
+                                ))}
+                            </Select>
                             </Form.Item>
                         </Col>
 
@@ -825,7 +839,16 @@ function OrcamentoEditPage() {
                             <TotalContainer>
                                 <span className="total-label">Total do Orçamento:</span>
                                 <span className="total-value">
-                                    R$ {calcularTotal().toFixed(2).replace('.', ',')}
+                                    R$ {(() => {
+                                        const formatCurrency = (val) => {
+                                            if (val == null || val === undefined) return '0,00';
+                                            const formatted = Math.abs(val).toFixed(2);
+                                            const parts = formatted.split('.');
+                                            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                            return parts.join(',');
+                                        };
+                                        return formatCurrency(calcularTotal());
+                                    })()}
                                 </span>
                             </TotalContainer>
                         </>
@@ -992,16 +1015,71 @@ function OrcamentoEditPage() {
                                     step={0.01}
                                     precision={2}
                                     formatter={value => {
-                                        if (!value) return '';
-                                        const numValue = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
+                                        if (value === null || value === undefined || value === '') return '';
+                                        const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+                                        if (isNaN(numValue)) return '';
                                         const absValue = Math.abs(numValue);
-                                        const formatted = absValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                        const parts = absValue.toFixed(2).split('.');
+                                        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                        const formatted = parts.join(',');
                                         return numValue < 0 ? `-R$ ${formatted}` : `R$ ${formatted}`;
                                     }}
                                     parser={value => {
-                                        if (!value) return '';
-                                        const parsed = value.replace(/R\$\s?|(,*)/g, '');
-                                        return parsed.startsWith('-') ? `-${parsed.substring(1)}` : parsed;
+                                        if (!value || value.trim() === '') return '';
+                                        
+                                        // Remove R$ e espaços
+                                        let cleaned = value.replace(/R\$\s?/g, '').trim();
+                                        
+                                        // Verifica se é negativo
+                                        const isNegative = cleaned.startsWith('-');
+                                        if (isNegative) cleaned = cleaned.substring(1);
+                                        
+                                        // Remove caracteres não numéricos exceto vírgula e ponto
+                                        cleaned = cleaned.replace(/[^\d,.]/g, '');
+                                        
+                                        // Se termina com vírgula ou ponto, remove para processar depois
+                                        const endsWithSeparator = cleaned.endsWith(',') || cleaned.endsWith('.');
+                                        if (endsWithSeparator) {
+                                            cleaned = cleaned.slice(0, -1);
+                                        }
+                                        
+                                        // Se não tem vírgula, trata como inteiro (sem decimais ainda)
+                                        if (!cleaned.includes(',')) {
+                                            // Remove pontos (separadores de milhares) e converte
+                                            const numStr = cleaned.replace(/\./g, '');
+                                            if (numStr === '') return '';
+                                            // Se estava digitando depois de vírgula mas apagou, retorna vazio parcial
+                                            if (endsWithSeparator && numStr === '') return '';
+                                            return (isNegative ? '-' : '') + numStr;
+                                        }
+                                        
+                                        // Se tem vírgula, é o separador decimal brasileiro
+                                        const parts = cleaned.split(',');
+                                        
+                                        // Parte inteira: remove pontos (separadores de milhares)
+                                        let integerPart = parts[0].replace(/\./g, '');
+                                        // Se parte inteira está vazia e não há vírgula antes de começar a digitar
+                                        if (integerPart === '' && cleaned.startsWith(',')) {
+                                            integerPart = '0';
+                                        }
+                                        
+                                        // Parte decimal: LIMITA A APENAS 2 DÍGITOS - corta qualquer coisa além disso
+                                        const decimalPart = parts[1] ? parts[1].replace(/\D/g, '').substring(0, 2) : '';
+                                        
+                                        // Se ambas estão vazias, retorna vazio
+                                        if (integerPart === '' && decimalPart === '') return '';
+                                        
+                                        // Monta o número: inteiro.decimal (usa ponto para decimal no formato interno)
+                                        let result;
+                                        if (decimalPart === '') {
+                                            // Se não há parte decimal ainda, retorna só a parte inteira
+                                            result = integerPart || '0';
+                                        } else {
+                                            // Usa exatamente os 2 dígitos (preenche com zero se tiver menos de 2)
+                                            result = `${integerPart || '0'}.${decimalPart.padEnd(2, '0')}`;
+                                        }
+                                        
+                                        return (isNegative ? '-' : '') + result;
                                     }}
                                 />
                             </Form.Item>
