@@ -34,6 +34,7 @@ import PecasPage from './pages/Pecas';
 import PecaCreate from './pages/PecaCreate';
 import PecaEdit from './pages/PecaEdit';
 import PecaDetail from './pages/PecaDetail';
+import Recibos from './pages/Recibos';
 import ProtectedRoute from './components/ProtectedRoute';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { theme } from './styles/theme';
@@ -99,6 +100,8 @@ function AppContent() {
                   <Route path="pecas/novo" element={<PecaCreate />} />
                   <Route path="pecas/editar/:id" element={<PecaEdit />} />
                   <Route path="pecas/detalhes/:id" element={<PecaDetail />} />
+
+                  <Route path="recibos" element={<Recibos />} />
 
                   <Route path="perfil" element={<PerfilPage />} />
 

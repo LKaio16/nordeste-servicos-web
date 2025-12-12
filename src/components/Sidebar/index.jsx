@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { NavLink, Link } from 'react-router-dom';
 import {
-  FiGrid, FiUsers, FiHardDrive, FiTool, FiFileText, FiTruck, FiArchive, FiLogOut, FiMenu, FiX, FiUser
+  FiGrid, FiUsers, FiHardDrive, FiTool, FiFileText, FiTruck, FiArchive, FiLogOut, FiMenu, FiX, FiUser, FiDollarSign
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.png';
@@ -193,6 +193,7 @@ const navLinks = [
   { to: "/admin/servicos", icon: <FiTool />, text: "Serviços" },
   { to: "/admin/os", icon: <FiFileText />, text: "Ordens de Serviço" },
   { to: "/admin/orcamentos", icon: <FiArchive />, text: "Orçamentos" },
+  { to: "/admin/recibos", icon: <FiDollarSign />, text: "Recibos" },
   { to: "/admin/pecas", icon: <FiTruck />, text: "Peças" },
   { to: "/admin/usuarios", icon: <FiUsers />, text: "Usuários" }
 ];

@@ -12,6 +12,7 @@ import {
     HomeOutlined
 } from '@ant-design/icons';
 import { getClienteById, updateCliente } from '../../services/clienteService';
+import { buscarEnderecoPorCEP } from '../../utils/cepService';
 import {
     Card,
     Button,
@@ -220,6 +221,33 @@ function ClienteEdit() {
     const [clienteData, setClienteData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingCEP, setIsLoadingCEP] = useState(false);
+
+    const handleCEPChange = async (e) => {
+        const cepValue = e.target.value;
+        const formatted = formatCEP(cepValue);
+        form.setFieldsValue({ cep: formatted });
+
+        // Busca endereço quando CEP estiver completo (8 dígitos)
+        const cepLimpo = cepValue.replace(/\D/g, '');
+        if (cepLimpo.length === 8) {
+            setIsLoadingCEP(true);
+            try {
+                const endereco = await buscarEnderecoPorCEP(cepLimpo);
+                form.setFieldsValue({
+                    rua: endereco.rua,
+                    bairro: endereco.bairro,
+                    cidade: endereco.cidade,
+                    estado: endereco.estado,
+                });
+                message.success('Endereço encontrado!');
+            } catch (error) {
+                message.warning('CEP não encontrado. Preencha o endereço manualmente.');
+            } finally {
+                setIsLoadingCEP(false);
+            }
+        }
+    };
 
     useEffect(() => {
         const fetchCliente = async () => {
@@ -479,10 +507,8 @@ function ClienteEdit() {
                             >
                                 <Input
                                     placeholder="00000-000"
-                                    onChange={(e) => {
-                                        const formatted = formatCEP(e.target.value);
-                                        form.setFieldsValue({ cep: formatted });
-                                    }}
+                                    suffix={isLoadingCEP ? <Spin size="small" /> : null}
+                                    onChange={handleCEPChange}
                                 />
                             </Form.Item>
                         </Col>
