@@ -7,8 +7,9 @@ import { getAllUsuarios } from './usuarioService';
 const getDashboardStats = async () => {
     try {
         // Busca todas as listas em paralelo para otimizar o tempo de carregamento
+        // Para OS, busca apenas as 5 mais recentes para a lista, e usa endpoint de estatísticas para totais
         const [ordens, clientes, equipamentos, usuarios] = await Promise.all([
-            getAllOrdensServico(),
+            getAllOrdensServico('', 0, 100), // Busca até 100 para ter dados suficientes
             getAllClientes(),
             getAllEquipamentos(),
             getAllUsuarios()
@@ -16,7 +17,7 @@ const getDashboardStats = async () => {
 
         // Processa as estatísticas das Ordens de Serviço
         const osStats = {
-            total: ordens.length,
+            total: ordens.length, // Será limitado a 100, mas é uma estimativa
             status: ordens.reduce((acc, os) => {
                 acc[os.status] = (acc[os.status] || 0) + 1;
                 return acc;

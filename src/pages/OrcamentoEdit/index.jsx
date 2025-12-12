@@ -362,7 +362,7 @@ function OrcamentoEditPage() {
             try {
                 const [orcamentoData, osData, pecasData, tiposData, itensData] = await Promise.all([
                     orcamentoService.getOrcamentoById(id),
-                    osService.getAllOrdensServico(),
+                    osService.getAllOrdensServico('', 0, 1000), // Busca até 1000 OS para o select
                     pecaMaterialService.getAllPecasMateriais(),
                     tipoServicoService.getAllTiposServico(),
                     itemOrcamentoService.getItensByOrcamento(id)

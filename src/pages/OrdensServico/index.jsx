@@ -206,6 +206,12 @@ const OrdensServicoPage = () => {
     const [showCalendar, setShowCalendar] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedDateOS, setSelectedDateOS] = useState([]);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 20,
+        total: 0,
+    });
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
     // Função para tratar imagens base64
@@ -230,10 +236,26 @@ const OrdensServicoPage = () => {
         return imageData;
     };
 
-    const fetchOrdensServico = useCallback(async () => {
+    const fetchOrdensServico = useCallback(async (page = 0, size = 20, search = '') => {
         try {
-            const data = await osService.getAllOrdensServico();
+            const data = await osService.getAllOrdensServico(search, page, size);
             setOrdensServico(data);
+            
+            // Lógica melhorada para estimar o total
+            if (data.length < size) {
+                // Se retornou menos que o tamanho da página, é a última página
+                setPagination(prev => ({ 
+                    ...prev, 
+                    total: page * size + data.length 
+                }));
+            } else {
+                // Se retornou exatamente o tamanho da página, pode haver mais
+                // Estimamos que há pelo menos mais uma página
+                setPagination(prev => ({ 
+                    ...prev, 
+                    total: (page + 2) * size // Estimativa: assume pelo menos mais uma página
+                }));
+            }
         } catch (err) {
             message.error("Falha ao carregar as Ordens de Serviço.");
             console.error("Erro ao buscar ordens de serviço:", err);
@@ -243,16 +265,26 @@ const OrdensServicoPage = () => {
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
-            await fetchOrdensServico();
+            const page = pagination.current - 1; // Ant Design usa 1-based, API usa 0-based
+            await fetchOrdensServico(page, pagination.pageSize, searchTerm);
             setIsLoading(false);
         }
         loadData();
-    }, [fetchOrdensServico]);
+    }, [pagination.current, pagination.pageSize, searchTerm, fetchOrdensServico]);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await fetchOrdensServico();
+        const page = pagination.current - 1;
+        await fetchOrdensServico(page, pagination.pageSize, searchTerm);
         setIsRefreshing(false);
+    };
+
+    const handleTableChange = (newPagination) => {
+        setPagination({
+            ...pagination,
+            current: newPagination.current,
+            pageSize: newPagination.pageSize,
+        });
     };
 
     const handleViewDetails = (id) => {
@@ -610,16 +642,19 @@ const OrdensServicoPage = () => {
                     dataSource={ordensServico}
                     rowKey="id"
                     loading={isLoading}
+                    onChange={handleTableChange}
                     onRow={(record) => ({
                         onClick: () => handleRowClick(record),
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
-                        pageSize: 10,
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} de ${total} ordens de serviço`,
+                            `${range[0]}-${range[1]} de ${total || '?'} ordens de serviço`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         style: {
                             marginTop: '24px',

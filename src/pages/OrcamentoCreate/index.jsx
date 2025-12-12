@@ -485,7 +485,7 @@ function OrcamentoCreatePage() {
             try {
                 const [clientesData, osData, pecasData, tiposData] = await Promise.all([
                     getAllClientes(),
-                    osService.getAllOrdensServico(),
+                    osService.getAllOrdensServico('', 0, 1000), // Busca até 1000 OS para o select
                     pecaMaterialService.getAllPecasMateriais(),
                     tipoServicoService.getAllTiposServico()
                 ]);

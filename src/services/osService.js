@@ -1,10 +1,14 @@
 import api from './api';
 
-export const getAllOrdensServico = async (searchTerm = '') => {
+export const getAllOrdensServico = async (searchTerm = '', page = 0, size = 20) => {
     try {
         // Usa o endpoint e o parâmetro de busca definidos na API
         const response = await api.get('/api/ordens-servico', {
-            params: { searchTerm: searchTerm || null }, // Envia o parâmetro se ele existir
+            params: { 
+                searchTerm: searchTerm || null,
+                page: page,
+                size: size
+            },
         });
         return response.data;
     } catch (error) {
