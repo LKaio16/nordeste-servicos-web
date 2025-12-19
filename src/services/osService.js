@@ -101,4 +101,14 @@ export const deleteOrdemServico = async (id) => {
         console.error(`Erro ao excluir Ordem de Serviço ${id}:`, error.response?.data || error.message);
         throw error.response?.data || new Error("Não foi possível excluir a Ordem de Serviço.");
     }
+};
+
+export const deleteFoto = async (osId, fotoId) => {
+    try {
+        const response = await api.delete(`/api/ordens-servico/${osId}/fotos/${fotoId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Erro ao excluir foto ${fotoId} da OS ${osId}:`, error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível excluir a foto.");
+    }
 }; 

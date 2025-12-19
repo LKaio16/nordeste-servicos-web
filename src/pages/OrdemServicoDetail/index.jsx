@@ -173,6 +173,34 @@ const ImageGallery = styled.div`
   }
 `;
 
+const ImageContainer = styled.div`
+    position: relative;
+    display: inline-block;
+    
+    .delete-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        background: rgba(255, 77, 79, 0.9);
+        border: none;
+        border-radius: 4px;
+        color: white;
+        padding: 4px 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        
+        &:hover {
+            background: rgba(255, 77, 79, 1);
+            transform: scale(1.05);
+        }
+    }
+`;
+
 const SignatureContainer = styled.div`
     display: flex;
     gap: 24px;
@@ -246,6 +274,17 @@ function OrdemServicoDetailPage() {
         };
         fetchData();
     }, [id]);
+
+    const handleDeleteFoto = async (fotoId) => {
+        try {
+            await osService.deleteFoto(id, fotoId);
+            message.success('Foto excluída com sucesso!');
+            // Atualiza a lista de fotos removendo a foto deletada
+            setFotos(fotos.filter(foto => foto.id !== fotoId));
+        } catch (error) {
+            message.error('Erro ao excluir foto: ' + (error.message || 'Erro desconhecido'));
+        }
+    };
 
 
     const handleDelete = async () => {
@@ -628,14 +667,34 @@ function OrdemServicoDetailPage() {
                     }>
                         <ImageGallery>
                             {fotos.map((foto) => (
-                                <Image
-                                    key={foto.id}
-                                    src={`data:image/jpeg;base64,${foto.fotoBase64}`}
-                                    alt={foto.descricao || 'Foto da OS'}
-                                    preview={{
-                                        mask: 'Clique para ampliar'
-                                    }}
-                                />
+                                <ImageContainer key={foto.id}>
+                                    <Popconfirm
+                                        title="Excluir foto"
+                                        description="Tem certeza que deseja excluir esta foto?"
+                                        onConfirm={() => handleDeleteFoto(foto.id)}
+                                        okText="Sim"
+                                        cancelText="Não"
+                                        okButtonProps={{ danger: true }}
+                                    >
+                                        <Button
+                                            type="primary"
+                                            danger
+                                            size="small"
+                                            icon={<DeleteOutlined />}
+                                            className="delete-button"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Excluir
+                                        </Button>
+                                    </Popconfirm>
+                                    <Image
+                                        src={`data:image/jpeg;base64,${foto.fotoBase64}`}
+                                        alt={foto.descricao || 'Foto da OS'}
+                                        preview={{
+                                            mask: 'Clique para ampliar'
+                                        }}
+                                    />
+                                </ImageContainer>
                             ))}
                         </ImageGallery>
                     </StyledCard>
