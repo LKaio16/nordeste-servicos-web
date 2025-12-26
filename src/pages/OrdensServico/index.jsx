@@ -457,6 +457,7 @@ const OrdensServicoPage = () => {
             render: (id) => (
                 <Badge
                     count={id}
+                    overflowCount={999999}
                     style={{
                         backgroundColor: '#00529b',
                         fontSize: '12px',

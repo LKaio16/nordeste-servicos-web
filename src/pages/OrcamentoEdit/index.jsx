@@ -1004,83 +1004,54 @@ function OrcamentoEditPage() {
                         <Col span={12}>
                             <Form.Item
                                 name="valorUnitario"
-                                label="Valor Unitário (R$)"
+                                label={
+                                    <Space>
+                                        <DollarOutlined />
+                                        <span>Valor Unitário</span>
+                                    </Space>
+                                }
+                                tooltip="Digite o valor unitário do item. Use vírgula para centavos (ex: 150,50). Para descontos, use valor negativo."
                                 rules={[
-                                    { required: true, message: 'Digite o valor unitário!' }
+                                    { required: true, message: 'Digite o valor unitário!' },
+                                    { type: 'number', message: 'Valor inválido!' }
                                 ]}
+                                extra={<Text type="secondary" style={{ fontSize: '12px' }}>Exemplo: 150,50 ou -10,00 (desconto)</Text>}
                             >
                                 <InputNumber
                                     style={{ width: '100%' }}
                                     placeholder="0,00"
+                                    min={-999999.99}
+                                    max={999999.99}
                                     step={0.01}
                                     precision={2}
-                                    formatter={value => {
-                                        if (value === null || value === undefined || value === '') return '';
-                                        const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+                                    formatter={(value) => {
+                                        if (!value && value !== 0) return '';
+                                        const numValue = Number(value);
                                         if (isNaN(numValue)) return '';
                                         const absValue = Math.abs(numValue);
                                         const parts = absValue.toFixed(2).split('.');
                                         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                                         const formatted = parts.join(',');
-                                        return numValue < 0 ? `-R$ ${formatted}` : `R$ ${formatted}`;
+                                        return numValue < 0 ? `-${formatted}` : formatted;
                                     }}
-                                    parser={value => {
+                                    parser={(value) => {
                                         if (!value || value.trim() === '') return '';
-                                        
-                                        // Remove R$ e espaços
-                                        let cleaned = value.replace(/R\$\s?/g, '').trim();
-                                        
+                                        // Remove tudo exceto números, vírgula, ponto e sinal negativo
+                                        let cleaned = value.replace(/[^\d,.-]/g, '');
                                         // Verifica se é negativo
                                         const isNegative = cleaned.startsWith('-');
                                         if (isNegative) cleaned = cleaned.substring(1);
-                                        
-                                        // Remove caracteres não numéricos exceto vírgula e ponto
-                                        cleaned = cleaned.replace(/[^\d,.]/g, '');
-                                        
-                                        // Se termina com vírgula ou ponto, remove para processar depois
-                                        const endsWithSeparator = cleaned.endsWith(',') || cleaned.endsWith('.');
-                                        if (endsWithSeparator) {
-                                            cleaned = cleaned.slice(0, -1);
-                                        }
-                                        
-                                        // Se não tem vírgula, trata como inteiro (sem decimais ainda)
-                                        if (!cleaned.includes(',')) {
-                                            // Remove pontos (separadores de milhares) e converte
-                                            const numStr = cleaned.replace(/\./g, '');
-                                            if (numStr === '') return '';
-                                            // Se estava digitando depois de vírgula mas apagou, retorna vazio parcial
-                                            if (endsWithSeparator && numStr === '') return '';
-                                            return (isNegative ? '-' : '') + numStr;
-                                        }
-                                        
-                                        // Se tem vírgula, é o separador decimal brasileiro
-                                        const parts = cleaned.split(',');
-                                        
-                                        // Parte inteira: remove pontos (separadores de milhares)
-                                        let integerPart = parts[0].replace(/\./g, '');
-                                        // Se parte inteira está vazia e não há vírgula antes de começar a digitar
-                                        if (integerPart === '' && cleaned.startsWith(',')) {
-                                            integerPart = '0';
-                                        }
-                                        
-                                        // Parte decimal: LIMITA A APENAS 2 DÍGITOS - corta qualquer coisa além disso
-                                        const decimalPart = parts[1] ? parts[1].replace(/\D/g, '').substring(0, 2) : '';
-                                        
-                                        // Se ambas estão vazias, retorna vazio
-                                        if (integerPart === '' && decimalPart === '') return '';
-                                        
-                                        // Monta o número: inteiro.decimal (usa ponto para decimal no formato interno)
-                                        let result;
-                                        if (decimalPart === '') {
-                                            // Se não há parte decimal ainda, retorna só a parte inteira
-                                            result = integerPart || '0';
-                                        } else {
-                                            // Usa exatamente os 2 dígitos (preenche com zero se tiver menos de 2)
-                                            result = `${integerPart || '0'}.${decimalPart.padEnd(2, '0')}`;
-                                        }
-                                        
-                                        return (isNegative ? '-' : '') + result;
+                                        // Remove pontos (separadores de milhares)
+                                        cleaned = cleaned.replace(/\./g, '');
+                                        // Converte vírgula para ponto (padrão JavaScript)
+                                        cleaned = cleaned.replace(',', '.');
+                                        // Se está vazio, retorna vazio
+                                        if (cleaned === '' || cleaned === '.') return '';
+                                        const numValue = parseFloat(cleaned);
+                                        if (isNaN(numValue)) return '';
+                                        return isNegative ? -numValue : numValue;
                                     }}
+                                    addonBefore={<span style={{ color: '#00529b', fontWeight: 600, fontSize: '16px' }}>R$</span>}
                                 />
                             </Form.Item>
                         </Col>
