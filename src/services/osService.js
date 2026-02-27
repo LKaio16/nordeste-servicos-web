@@ -103,6 +103,17 @@ export const deleteOrdemServico = async (id) => {
     }
 };
 
+export const uploadFoto = async (osId, payload) => {
+    try {
+        const response = await api.post(`/api/ordens-servico/${osId}/fotos`, payload);
+        return response.data;
+    } catch (error) {
+        console.error(`Erro ao enviar foto para a OS ${osId}:`, error.response?.data || error.message);
+        const msg = error.response?.data?.message || error.response?.data || error.message;
+        throw new Error(typeof msg === 'string' ? msg : 'Não foi possível enviar a foto.');
+    }
+};
+
 export const deleteFoto = async (osId, fotoId) => {
     try {
         const response = await api.delete(`/api/ordens-servico/${osId}/fotos/${fotoId}`);

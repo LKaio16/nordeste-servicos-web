@@ -12,7 +12,9 @@ import {
     ExclamationCircleOutlined,
     FileTextOutlined,
     CameraOutlined,
-    EditFilled
+    EditFilled,
+    PlusOutlined,
+    UploadOutlined
 } from '@ant-design/icons';
 import * as osService from '../../services/osService';
 import {
@@ -256,6 +258,8 @@ function OrdemServicoDetailPage() {
     const [fotos, setFotos] = useState([]);
     const [assinatura, setAssinatura] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [uploadingFoto, setUploadingFoto] = useState(false);
+    const [uploadInputKey, setUploadInputKey] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -279,11 +283,79 @@ function OrdemServicoDetailPage() {
         try {
             await osService.deleteFoto(id, fotoId);
             message.success('Foto excluída com sucesso!');
-            // Atualiza a lista de fotos removendo a foto deletada
             setFotos(fotos.filter(foto => foto.id !== fotoId));
         } catch (error) {
             message.error('Erro ao excluir foto: ' + (error.message || 'Erro desconhecido'));
         }
+    };
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result;
+                const base64 = dataUrl.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleUploadFoto = async (e) => {
+        const files = e?.target?.files;
+        if (!files || files.length === 0) return;
+
+        const acceptTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const toUpload = [];
+        for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            if (acceptTypes.includes(f.type)) {
+                toUpload.push(f);
+            } else {
+                message.warning(`Arquivo ignorado: ${f.name} (tipo não permitido)`);
+            }
+        }
+        if (toUpload.length === 0) {
+            message.warning('Envie apenas imagens (JPEG, PNG, GIF ou WebP).');
+            e.target.value = '';
+            return;
+        }
+
+        setUploadingFoto(true);
+        try {
+            for (const file of toUpload) {
+                const base64 = await fileToBase64(file);
+                const payload = {
+                    fotoBase64: base64,
+                    descricao: null,
+                    nomeArquivoOriginal: file.name,
+                    tipoConteudo: file.type || 'image/jpeg',
+                    tamanhoArquivo: file.size
+                };
+                const novaFoto = await osService.uploadFoto(id, payload);
+                setFotos((prev) => [...prev, novaFoto]);
+            }
+            message.success(`${toUpload.length} foto(s) enviada(s) com sucesso!`);
+        } catch (error) {
+            message.error('Erro ao enviar foto: ' + (error?.message || 'Erro desconhecido'));
+        } finally {
+            setUploadingFoto(false);
+            setUploadInputKey((k) => k + 1);
+            e.target.value = '';
+        }
+    };
+
+    const getFotoSrc = (foto) => {
+        if (foto.fotoUrl) return foto.fotoUrl;
+        if (foto.fotoBase64) {
+            const base64 = String(foto.fotoBase64).trim();
+            if (!base64) return null;
+            if (base64.startsWith('data:')) return base64;
+            const tipo = foto.tipoConteudo || 'image/jpeg';
+            return `data:${tipo};base64,${base64}`;
+        }
+        return null;
     };
 
 
@@ -658,47 +730,77 @@ function OrdemServicoDetailPage() {
                     </Row>
                 </StyledCard>
 
-                {fotos && fotos.length > 0 && (
-                    <StyledCard title={
+                <StyledCard title={
+                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                         <Space>
                             <CameraOutlined />
-                            <span>Fotos ({fotos.length})</span>
+                            <span>Fotos ({fotos?.length || 0})</span>
                         </Space>
-                    }>
+                        <Space>
+                            <input
+                                key={uploadInputKey}
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                multiple
+                                style={{ display: 'none' }}
+                                id="upload-foto-os"
+                                onChange={handleUploadFoto}
+                            />
+                            <Button
+                                type="primary"
+                                icon={<UploadOutlined />}
+                                loading={uploadingFoto}
+                                onClick={() => document.getElementById('upload-foto-os')?.click()}
+                            >
+                                Enviar fotos
+                            </Button>
+                        </Space>
+                    </Space>
+                }>
+                    {fotos && fotos.length > 0 ? (
                         <ImageGallery>
-                            {fotos.map((foto) => (
-                                <ImageContainer key={foto.id}>
-                                    <Popconfirm
-                                        title="Excluir foto"
-                                        description="Tem certeza que deseja excluir esta foto?"
-                                        onConfirm={() => handleDeleteFoto(foto.id)}
-                                        okText="Sim"
-                                        cancelText="Não"
-                                        okButtonProps={{ danger: true }}
-                                    >
-                                        <Button
-                                            type="primary"
-                                            danger
-                                            size="small"
-                                            icon={<DeleteOutlined />}
-                                            className="delete-button"
-                                            onClick={(e) => e.stopPropagation()}
+                            {fotos.map((foto) => {
+                                const src = getFotoSrc(foto);
+                                if (!src) return null;
+                                return (
+                                    <ImageContainer key={foto.id}>
+                                        <Popconfirm
+                                            title="Excluir foto"
+                                            description="Tem certeza que deseja excluir esta foto?"
+                                            onConfirm={() => handleDeleteFoto(foto.id)}
+                                            okText="Sim"
+                                            cancelText="Não"
+                                            okButtonProps={{ danger: true }}
                                         >
-                                            Excluir
-                                        </Button>
-                                    </Popconfirm>
-                                    <Image
-                                        src={`data:image/jpeg;base64,${foto.fotoBase64}`}
-                                        alt={foto.descricao || 'Foto da OS'}
-                                        preview={{
-                                            mask: 'Clique para ampliar'
-                                        }}
-                                    />
-                                </ImageContainer>
-                            ))}
+                                            <Button
+                                                type="primary"
+                                                danger
+                                                size="small"
+                                                icon={<DeleteOutlined />}
+                                                className="delete-button"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Excluir
+                                            </Button>
+                                        </Popconfirm>
+                                        <Image
+                                            src={src}
+                                            alt={foto.descricao || foto.nomeArquivoOriginal || 'Foto da OS'}
+                                            preview={{
+                                                mask: 'Clique para ampliar'
+                                            }}
+                                        />
+                                    </ImageContainer>
+                                );
+                            })}
                         </ImageGallery>
-                    </StyledCard>
-                )}
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '32px', color: '#888' }}>
+                            <CameraOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+                            <p>Nenhuma foto ainda. Clique em &quot;Enviar fotos&quot; para adicionar.</p>
+                        </div>
+                    )}
+                </StyledCard>
 
                 {assinatura && (
                     <StyledCard title={
