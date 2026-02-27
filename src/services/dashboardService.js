@@ -1,3 +1,4 @@
+import api from './api';
 import { getAllOrdensServico } from './osService';
 import { getAllClientes } from './clienteService';
 import { getAllEquipamentos } from './equipamentoService';
@@ -6,23 +7,25 @@ import { getAllUsuarios } from './usuarioService';
 
 const getDashboardStats = async () => {
     try {
-        // Busca todas as listas em paralelo para otimizar o tempo de carregamento
-        // Para OS, busca apenas as 5 mais recentes para a lista, e usa endpoint de estatísticas para totais
-        const [ordens, clientes, equipamentos, usuarios] = await Promise.all([
-            getAllOrdensServico('', 0, 100), // Busca até 100 para ter dados suficientes
+        // Usa endpoint de estatísticas para total e status das OS; busca ordens para recentes e técnicos
+        const [osStatsResponse, ordens, clientes, equipamentos, usuarios] = await Promise.all([
+            api.get('/api/ordens-servico/dashboard/stats'),
+            getAllOrdensServico('', 0, 100),
             getAllClientes(),
             getAllEquipamentos(),
             getAllUsuarios()
         ]);
 
-        // Processa as estatísticas das Ordens de Serviço
+        const d = osStatsResponse.data;
         const osStats = {
-            total: ordens.length, // Será limitado a 100, mas é uma estimativa
-            status: ordens.reduce((acc, os) => {
-                acc[os.status] = (acc[os.status] || 0) + 1;
-                return acc;
-            }, {}),
-            recentes: ordens.slice(0, 5) // Pega as 5 mais recentes
+            total: Number(d.totalOs ?? 0),
+            status: {
+                CONCLUIDA: Number(d.osConcluidas ?? 0),
+                EM_ANDAMENTO: Number(d.osEmAndamento ?? 0),
+                PENDENTE_PECAS: Number(d.osPendentes ?? 0),
+                EM_ABERTO: Number(d.osAbertas ?? 0)
+            },
+            recentes: ordens.slice(0, 5)
         };
 
         const clienteStats = {

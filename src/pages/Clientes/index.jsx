@@ -114,11 +114,10 @@ const StyledTable = styled(Table)`
   .ant-table {
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   }
   
   .ant-table-thead > tr > th {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #fff;
     border-bottom: 2px solid #00529b;
     font-weight: 600;
     color: #00529b;
@@ -132,7 +131,6 @@ const StyledTable = styled(Table)`
     &:hover {
       background: linear-gradient(135deg, #f8f9ff 0%, #e6f7ff 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 82, 155, 0.1);
     }
   }
   
@@ -184,8 +182,12 @@ const ActionButton = styled(Button)`
 
 const ClientInfo = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+  
+  .ant-avatar {
+    flex-shrink: 0;
+  }
   
   .client-name {
     color: #00529b;
