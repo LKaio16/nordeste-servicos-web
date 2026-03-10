@@ -187,17 +187,24 @@ function UsuarioEditPage() {
     const handleSubmit = async (values) => {
         setIsSubmitting(true);
         try {
-            const payload = { ...values };
-            // Se a senha estiver vazia, não a envie no payload para não sobrescrever a existente
-            if (!payload.senha) {
-                delete payload.senha;
+            const payload = {
+                nome: values.nome,
+                cracha: values.cracha ?? '',
+                email: values.email,
+                perfil: values.perfil,
+                fotoPerfil: values.fotoPerfil ?? null
+            };
+            // Envia a senha em texto plano apenas se o usuário preencheu; o backend codifica com BCrypt
+            if (values.senha && values.senha.trim()) {
+                payload.senha = values.senha.trim();
             }
 
-            await usuarioService.updateUsuario(id, { ...payload, perfis: [payload.perfil] });
+            await usuarioService.updateUsuario(id, payload);
             message.success('Usuário atualizado com sucesso!');
             navigate(`/admin/usuarios/detalhes/${id}`);
         } catch (err) {
-            message.error(err.message || 'Falha ao atualizar usuário.');
+            const msg = err.response?.data?.message || err.message || 'Falha ao atualizar usuário.';
+            message.error(msg);
         } finally {
             setIsSubmitting(false);
         }
