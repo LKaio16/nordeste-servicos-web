@@ -1,7 +1,10 @@
 import api from './api';
 
-export const getAllClientes = async () => {
-    const response = await api.get('/api/clientes');
+export const getAllClientes = async (searchTerm, tipoCliente) => {
+    const params = {};
+    if (searchTerm) params.searchTerm = searchTerm;
+    if (tipoCliente) params.tipoCliente = tipoCliente;
+    const response = await api.get('/api/clientes', { params });
     return response.data;
 };
 

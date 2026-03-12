@@ -13,7 +13,7 @@ const LayoutContainer = styled.div`
 const Overlay = styled.div`
   display: none;
   @media (max-width: 1023px) {
-    display: ${({ isOpen }) => (isOpen ? 'block' : 'none')};
+    display: ${({ $isOpen }) => ($isOpen ? 'block' : 'none')};
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
@@ -28,7 +28,7 @@ const MainContent = styled.main`
 
   /* Desktop: ajusta baseado no estado do menu */
   @media (min-width: 1024px) {
-    margin-left: ${({ collapsed }) => (collapsed ? '80px' : '256px')};
+    margin-left: ${({ $collapsed }) => ($collapsed ? '80px' : '256px')};
   }
 
   @media (max-width: 1023px) {
@@ -119,7 +119,7 @@ function MainLayout() {
 
   return (
     <LayoutContainer>
-      <Overlay isOpen={sidebarOpen} onClick={() => setSidebarOpen(false)} />
+      <Overlay $isOpen={sidebarOpen} onClick={() => setSidebarOpen(false)} />
 
       <Sidebar
         isOpen={sidebarOpen}
@@ -128,7 +128,7 @@ function MainLayout() {
         setCollapsed={setCollapsed}
       />
 
-      <MainContent collapsed={collapsed}>
+      <MainContent $collapsed={collapsed}>
         <TopBar>
           <MenuButton
             $hide={!isMobile}

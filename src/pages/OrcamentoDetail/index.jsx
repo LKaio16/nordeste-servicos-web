@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import dayjs from 'dayjs';
 import orcamentoService from '../../services/orcamentoService';
+import * as contaService from '../../services/contaService';
 import {
     Card,
     Button,
@@ -28,7 +29,8 @@ import {
     CalendarOutlined,
     DollarOutlined,
     FileTextOutlined,
-    CheckCircleOutlined
+    CheckCircleOutlined,
+    CreditCardOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -209,6 +211,7 @@ function OrcamentoDetailPage() {
     const [orcamento, setOrcamento] = useState(null);
     const [itens, setItens] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [criandoConta, setCriandoConta] = useState(false);
 
     // Função para extrair o valor do status
     const extractStatusValue = (status) => {
@@ -309,6 +312,42 @@ function OrcamentoDetailPage() {
 
     const handleBack = () => {
         navigate(-1);
+    };
+
+    const handleCriarContaReceber = async () => {
+        if (!orcamento || orcamento.valorTotal == null) {
+            message.warning('Orçamento sem valor total. Edite o orçamento antes de criar a conta.');
+            return;
+        }
+        setCriandoConta(true);
+        try {
+            const dataVencimento = orcamento.dataValidade
+                ? dayjs(orcamento.dataValidade).format('YYYY-MM-DD')
+                : dayjs().add(30, 'day').format('YYYY-MM-DD');
+            const payload = {
+                tipo: 'RECEBER',
+                clienteId: orcamento.clienteId || null,
+                fornecedorId: null,
+                descricao: `Orçamento #${orcamento.numeroOrcamento || orcamento.id}`,
+                valor: Number(orcamento.valorTotal),
+                valorPago: null,
+                dataVencimento,
+                dataPagamento: null,
+                status: 'PENDENTE',
+                categoria: null,
+                categoriaFinanceira: null,
+                subcategoria: null,
+                formaPagamento: null,
+                observacoes: orcamento.observacoesCondicoes ? `Ref. orçamento ${orcamento.numeroOrcamento || id}` : null,
+            };
+            const contaCriada = await contaService.createConta(payload);
+            message.success('Conta a receber criada com sucesso!');
+            navigate(`/admin/contas/editar/${contaCriada.id}`);
+        } catch (err) {
+            message.error(err.response?.data?.message || 'Erro ao criar conta a receber.');
+        } finally {
+            setCriandoConta(false);
+        }
     };
 
     // Definição das colunas da tabela de itens
@@ -413,6 +452,13 @@ function OrcamentoDetailPage() {
                     </TitleStyled>
                 </TitleContainer>
                 <ActionButtons>
+                    <Button
+                        icon={<CreditCardOutlined />}
+                        onClick={handleCriarContaReceber}
+                        loading={criandoConta}
+                    >
+                        Criar conta a receber
+                    </Button>
                     <Button
                         icon={<DownloadOutlined />}
                         onClick={handleDownload}

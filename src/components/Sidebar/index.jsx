@@ -14,6 +14,8 @@ import {
   FiMenu,
   FiChevronLeft,
   FiChevronRight,
+  FiPackage,
+  FiCreditCard,
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.png';
@@ -30,7 +32,7 @@ const SANS_SERIF = "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', san
 
 const SidebarContainer = styled.div`
   font-family: ${SANS_SERIF} !important;
-  width: ${({ collapsed }) => (collapsed ? '80px' : '256px')};
+  width: ${({ $collapsed }) => ($collapsed ? '80px' : '256px')};
   background: linear-gradient(to bottom, #ffffff, rgba(248, 250, 252, 0.8));
   border-right: 2px solid rgba(32, 61, 123, 0.2);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
@@ -42,17 +44,17 @@ const SidebarContainer = styled.div`
   top: 0;
   left: 0;
   z-index: 1000;
-  transform: ${({ isOpen, isMobile }) =>
-    isMobile ? (isOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)'};
+  transform: ${({ $isOpen, $isMobile }) =>
+    $isMobile ? ($isOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)'};
 
   @media (max-width: 1023px) {
     width: 256px;
-    box-shadow: ${({ isOpen }) => (isOpen ? '8px 0 30px rgba(0,0,0,0.15)' : 'none')};
+    box-shadow: ${({ $isOpen }) => ($isOpen ? '8px 0 30px rgba(0,0,0,0.15)' : 'none')};
   }
 `;
 
 const Header = styled.div`
-  padding: ${({ collapsed }) => (collapsed ? '0.75rem' : '1.5rem')};
+  padding: ${({ $collapsed }) => ($collapsed ? '0.75rem' : '1.5rem')};
   background: linear-gradient(135deg, #00529b 0%, #203d7b 100%);
   border-bottom: none;
   transition: padding 0.3s ease;
@@ -60,7 +62,7 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: ${({ collapsed }) => (collapsed ? '72px' : 'auto')};
+  min-height: ${({ $collapsed }) => ($collapsed ? '72px' : 'auto')};
   box-sizing: border-box;
 `;
 
@@ -73,9 +75,9 @@ const LogoWrapper = styled.div`
   overflow: hidden;
 
   img {
-    height: ${({ collapsed }) => (collapsed ? '40px' : '64px')};
+    height: ${({ $collapsed }) => ($collapsed ? '40px' : '64px')};
     width: auto;
-    max-width: ${({ collapsed }) => (collapsed ? '100%' : 'none')};
+    max-width: ${({ $collapsed }) => ($collapsed ? '100%' : 'none')};
     object-fit: contain;
     object-position: center;
   }
@@ -94,7 +96,7 @@ const RecolherButton = styled.button`
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   display: flex;
   align-items: center;
-  justify-content: ${({ collapsed }) => (collapsed ? 'center' : 'flex-start')};
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   width: 100%;
   height: 32px;
   padding: 0 0.75rem;
@@ -116,7 +118,7 @@ const RecolherButton = styled.button`
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    margin-right: ${({ collapsed }) => (collapsed ? '0' : '0.5rem')};
+    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.5rem')};
   }
 `;
 
@@ -157,25 +159,25 @@ const NavItem = styled.button`
   display: flex;
   align-items: center;
   width: 100%;
-  padding: ${({ collapsed }) => (collapsed ? '0.625rem 0.75rem' : '0.5rem 0.75rem')};
+  padding: ${({ $collapsed }) => ($collapsed ? '0.625rem 0.75rem' : '0.5rem 0.75rem')};
   margin-bottom: 2px;
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.4;
-  color: ${({ active }) => (active ? '#fff' : '#334155')};
-  background: ${({ active }) => (active ? NORDESTE : 'transparent')};
+  color: ${({ $active }) => ($active ? '#fff' : '#334155')};
+  background: ${({ $active }) => ($active ? NORDESTE : 'transparent')};
   border: none;
   border-radius: 8px;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
   position: relative;
-  box-shadow: ${({ active }) => (active ? `0 2px 8px ${NORDESTE}4D` : 'none')};
-  justify-content: ${({ collapsed }) => (collapsed ? 'center' : 'flex-start')};
+  box-shadow: ${({ $active }) => ($active ? `0 2px 8px ${NORDESTE}4D` : 'none')};
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
 
   &:hover {
-    background: ${({ active }) => (active ? NORDESTE : NORDESTE_LIGHT)};
-    color: ${({ active }) => (active ? '#fff' : NORDESTE)};
+    background: ${({ $active }) => ($active ? NORDESTE : NORDESTE_LIGHT)};
+    color: ${({ $active }) => ($active ? '#fff' : NORDESTE)};
   }
 
   svg {
@@ -183,7 +185,7 @@ const NavItem = styled.button`
     height: 20px;
     min-width: 20px;
     flex-shrink: 0;
-    margin-right: ${({ collapsed }) => (collapsed ? '0' : '0.75rem')};
+    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.75rem')};
   }
 
   span {
@@ -220,7 +222,7 @@ const Tooltip = styled.span`
 `;
 
 const Footer = styled.div`
-  padding: ${({ collapsed }) => (collapsed ? '0.75rem' : '1rem')};
+  padding: ${({ $collapsed }) => ($collapsed ? '0.75rem' : '1rem')};
   border-top: 2px solid rgba(32, 61, 123, 0.3);
   background: linear-gradient(to top, rgba(32, 61, 123, 0.05), transparent);
   transition: padding 0.3s ease;
@@ -299,7 +301,7 @@ const LogoutButton = styled.button`
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   display: flex;
   align-items: center;
-  justify-content: ${({ collapsed }) => (collapsed ? 'center' : 'flex-start')};
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   width: 100%;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -320,7 +322,7 @@ const LogoutButton = styled.button`
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    margin-right: ${({ collapsed }) => (collapsed ? '0' : '0.5rem')};
+    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.5rem')};
   }
 `;
 
@@ -346,6 +348,14 @@ const navGroups = [
       { path: '/admin/os', icon: FiFileText, text: 'Ordens de Serviço' },
       { path: '/admin/orcamentos', icon: FiArchive, text: 'Orçamentos' },
       { path: '/admin/recibos', icon: FiDollarSign, text: 'Recibos' },
+    ],
+  },
+  {
+    title: 'Financeiro',
+    items: [
+      { path: '/admin/fornecedores', icon: FiPackage, text: 'Fornecedores' },
+      { path: '/admin/contas', icon: FiCreditCard, text: 'Contas a pagar/receber' },
+      { path: '/admin/notas-fiscais', icon: FiFileText, text: 'Notas fiscais' },
     ],
   },
   {
@@ -394,9 +404,9 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
 
   return (
     <SidebarWrapper>
-      <SidebarContainer isOpen={isOpen} isMobile={isMobile} collapsed={collapsed}>
-        <Header collapsed={collapsed}>
-          <LogoWrapper collapsed={collapsed}>
+      <SidebarContainer $isOpen={isOpen} $isMobile={isMobile} $collapsed={collapsed}>
+        <Header $collapsed={collapsed}>
+          <LogoWrapper $collapsed={collapsed}>
             <img src={logo} alt="Nordeste Serviços" />
           </LogoWrapper>
         </Header>
@@ -404,7 +414,7 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
         {!isMobile && (
           <ToggleSection>
             <RecolherButton
-              collapsed={collapsed}
+              $collapsed={collapsed}
               onClick={() => setCollapsed(!collapsed)}
             >
               {collapsed ? (
@@ -429,8 +439,8 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
                 return (
                   <NavItem
                     key={item.path}
-                    active={active}
-                    collapsed={collapsed}
+                    $active={active}
+                    $collapsed={collapsed}
                     onClick={() => handleNav(item.path)}
                     title={collapsed ? item.text : undefined}
                   >
@@ -444,7 +454,7 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
           ))}
         </NavContent>
 
-        <Footer collapsed={collapsed}>
+        <Footer $collapsed={collapsed}>
           {user && (
             <>
               <UserCard to="/admin/perfil" style={{ display: collapsed ? 'none' : 'flex' }}>
@@ -482,7 +492,7 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
               )}
             </>
           )}
-          <LogoutButton collapsed={collapsed} onClick={handleLogout} title={collapsed ? 'Sair' : undefined}>
+          <LogoutButton $collapsed={collapsed} onClick={handleLogout} title={collapsed ? 'Sair' : undefined}>
             <FiLogOut />
             {!collapsed && <span>Sair</span>}
           </LogoutButton>

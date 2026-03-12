@@ -10,7 +10,8 @@ import {
     EyeOutlined,
     MailOutlined,
     PhoneOutlined,
-    DownloadOutlined
+    DownloadOutlined,
+    SearchOutlined
 } from '@ant-design/icons';
 import * as clienteService from '../../services/clienteService';
 import {
@@ -24,7 +25,7 @@ import {
     Popconfirm,
     Tooltip,
     Avatar,
-    Tag
+    Input
 } from 'antd';
 
 const { Title, Text } = Typography;
@@ -54,7 +55,7 @@ const StyledCard = styled(Card)`
   }
   
   .ant-card-body {
-    padding: 0 24px 24px 24px;
+    padding: 24px;
   }
 `;
 
@@ -226,16 +227,18 @@ const Clientes = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [busca, setBusca] = useState('');
 
     const fetchClientes = useCallback(async () => {
         try {
-            const data = await clienteService.getAllClientes();
+            const termo = busca.trim() || undefined;
+            const data = await clienteService.getAllClientes(termo);
             setClientes(data);
         } catch (err) {
             console.error('Erro ao buscar clientes:', err);
             message.error('Não foi possível carregar a lista de clientes.');
         }
-    }, []);
+    }, [busca]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -428,6 +431,35 @@ const Clientes = () => {
             </HeaderContainer>
 
             <StyledCard>
+                <Space style={{ marginBottom: 20 }} wrap>
+                    <Input
+                        placeholder="Buscar por nome, CPF/CNPJ ou e-mail"
+                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        onPressEnter={() => {
+                            setIsLoading(true);
+                            fetchClientes().finally(() => setIsLoading(false));
+                        }}
+                        allowClear
+                        style={{ width: 320 }}
+                    />
+                    <Button
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        onClick={() => {
+                            setIsLoading(true);
+                            fetchClientes().finally(() => setIsLoading(false));
+                        }}
+                    >
+                        Buscar
+                    </Button>
+                    {busca.trim() && (
+                        <Button onClick={() => setBusca('')}>
+                            Limpar busca
+                        </Button>
+                    )}
+                </Space>
                 <StyledTable
                     columns={columns}
                     dataSource={clientes}

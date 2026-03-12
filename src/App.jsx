@@ -35,6 +35,13 @@ import PecaCreate from './pages/PecaCreate';
 import PecaEdit from './pages/PecaEdit';
 import PecaDetail from './pages/PecaDetail';
 import Recibos from './pages/Recibos';
+import Fornecedores from './pages/Fornecedores';
+import FornecedorCreate from './pages/FornecedorCreate';
+import FornecedorEdit from './pages/FornecedorEdit';
+import Contas from './pages/Contas';
+import ContaForm from './pages/ContaForm';
+import NotasFiscais from './pages/NotasFiscais';
+import NotaFiscalForm from './pages/NotaFiscalForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { theme } from './styles/theme';
@@ -102,6 +109,16 @@ function AppContent() {
                   <Route path="pecas/detalhes/:id" element={<PecaDetail />} />
 
                   <Route path="recibos" element={<Recibos />} />
+
+                  <Route path="fornecedores" element={<Fornecedores />} />
+                  <Route path="fornecedores/novo" element={<FornecedorCreate />} />
+                  <Route path="fornecedores/editar/:id" element={<FornecedorEdit />} />
+                  <Route path="contas" element={<Contas />} />
+                  <Route path="contas/novo" element={<ContaForm />} />
+                  <Route path="contas/editar/:id" element={<ContaForm />} />
+                  <Route path="notas-fiscais" element={<NotasFiscais />} />
+                  <Route path="notas-fiscais/novo" element={<NotaFiscalForm />} />
+                  <Route path="notas-fiscais/editar/:id" element={<NotaFiscalForm />} />
 
                   <Route path="perfil" element={<PerfilPage />} />
 
