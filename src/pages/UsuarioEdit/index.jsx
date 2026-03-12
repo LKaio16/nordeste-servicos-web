@@ -9,7 +9,9 @@ import {
     IdcardOutlined,
     MailOutlined,
     LockOutlined,
-    TeamOutlined
+    TeamOutlined,
+    CameraOutlined,
+    DeleteOutlined
 } from '@ant-design/icons';
 import * as usuarioService from '../../services/usuarioService';
 import {
@@ -21,7 +23,9 @@ import {
     Spin,
     Form,
     Input,
-    Select
+    Select,
+    Upload,
+    Avatar
 } from 'antd';
 
 // Styled Components
@@ -164,6 +168,15 @@ function UsuarioEditPage() {
     const [form] = Form.useForm();
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [fotoPreview, setFotoPreview] = useState(null);
+
+    const getImageSrc = (fotoUrl, fotoPerfil) => {
+        const src = fotoUrl || fotoPerfil;
+        if (!src) return null;
+        if (src.startsWith('http')) return src;
+        if (src.startsWith('data:image')) return src;
+        return `data:image/jpeg;base64,${src}`;
+    };
 
     useEffect(() => {
         const fetchUsuario = async () => {
@@ -171,8 +184,9 @@ function UsuarioEditPage() {
                 const data = await usuarioService.getUsuarioById(id);
                 form.setFieldsValue({
                     ...data,
-                    senha: '' // A senha não deve ser pré-preenchida por segurança
+                    senha: ''
                 });
+                setFotoPreview(getImageSrc(data.fotoUrl, data.fotoPerfil));
             } catch (err) {
                 message.error('Erro ao carregar dados do usuário.');
             } finally {
@@ -312,6 +326,45 @@ function UsuarioEditPage() {
                             prefix={<LockOutlined />}
                             placeholder="Digite a nova senha (opcional)"
                         />
+                    </Form.Item>
+
+                    <Form.Item label="Foto de perfil">
+                        <Space align="center" size="middle">
+                            <Avatar
+                                size={80}
+                                src={fotoPreview}
+                                icon={!fotoPreview && <UserOutlined />}
+                            />
+                            <Space direction="vertical">
+                                <Upload
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    showUploadList={false}
+                                    beforeUpload={(file) => {
+                                        const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type);
+                                        if (!isImage) {
+                                            message.error('Apenas imagens (JPEG, PNG, GIF, WebP) são permitidas.');
+                                            return Upload.LIST_IGNORE;
+                                        }
+                                        const isLt5M = file.size / 1024 / 1024 < 5;
+                                        if (!isLt5M) {
+                                            message.error('A imagem deve ter menos de 5MB.');
+                                            return Upload.LIST_IGNORE;
+                                        }
+                                        usuarioService.uploadFotoUsuario(id, file)
+                                            .then((updated) => {
+                                                setFotoPreview(getImageSrc(updated.fotoUrl, updated.fotoPerfil));
+                                                message.success('Foto atualizada!');
+                                            })
+                                            .catch((err) => {
+                                                message.error(err.response?.data?.message || 'Erro ao enviar foto.');
+                                            });
+                                        return false;
+                                    }}
+                                >
+                                    <Button icon={<CameraOutlined />}>Enviar foto</Button>
+                                </Upload>
+                            </Space>
+                        </Space>
                     </Form.Item>
 
                     <Form.Item

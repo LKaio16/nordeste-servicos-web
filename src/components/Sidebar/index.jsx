@@ -459,9 +459,9 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
             <>
               <UserCard to="/admin/perfil" style={{ display: collapsed ? 'none' : 'flex' }}>
                 <UserAvatar>
-                  {getImageSrc(user?.fotoPerfil) ? (
+                  {getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? (
                     <img
-                      src={getImageSrc(user.fotoPerfil)}
+                      src={getImageSrc(user.fotoUrl || user.fotoPerfil)}
                       alt={user.nome}
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -470,7 +470,7 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
                       }}
                     />
                   ) : null}
-                  <span style={{ display: getImageSrc(user?.fotoPerfil) ? 'none' : 'flex' }}>
+                  <span style={{ display: getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? 'none' : 'flex' }}>
                     {user?.nome?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </UserAvatar>
@@ -482,8 +482,8 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
               {collapsed && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
                   <UserAvatar>
-                    {getImageSrc(user?.fotoPerfil) ? (
-                      <img src={getImageSrc(user.fotoPerfil)} alt="" />
+                    {getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? (
+                      <img src={getImageSrc(user.fotoUrl || user.fotoPerfil)} alt="" />
                     ) : (
                       <span>{user?.nome?.charAt(0)?.toUpperCase() || 'U'}</span>
                     )}

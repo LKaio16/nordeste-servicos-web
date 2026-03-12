@@ -23,4 +23,13 @@ export const updateUsuario = async (id, usuarioData) => {
 export const deleteUsuario = async (id) => {
     const response = await api.delete(`/api/usuarios/${id}`);
     return response.data;
+};
+
+export const uploadFotoUsuario = async (id, file) => {
+    const formData = new FormData();
+    formData.append('foto', file);
+    const response = await api.put(`/api/usuarios/${id}/foto`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
 }; 

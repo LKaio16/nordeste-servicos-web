@@ -113,15 +113,12 @@ function PerfilPage() {
     if (!profile) return <PageContainer><p>Perfil não encontrado.</p></PageContainer>;
     
     const getProfileImageUrl = () => {
-        if (profile.fotoPerfil) {
-            // Verifica se o campo já é uma URL de dados base64
-            if (profile.fotoPerfil.startsWith('data:image')) {
-                return profile.fotoPerfil;
-            }
-            // Adiciona o prefixo para strings base64 puras
-            return `data:image/jpeg;base64,${profile.fotoPerfil}`;
+        const src = profile.fotoUrl || profile.fotoPerfil;
+        if (src) {
+            if (src.startsWith('http')) return src;
+            if (src.startsWith('data:image')) return src;
+            return `data:image/jpeg;base64,${src}`;
         }
-        // Retorna uma imagem padrão
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.nome)}&background=random&color=fff&size=100`;
     };
     

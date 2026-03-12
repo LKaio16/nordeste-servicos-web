@@ -529,7 +529,7 @@ const OrdensServicoPage = () => {
             key: 'tecnico',
             responsive: ['md'],
             render: (text, record) => {
-                const techImageSrc = getImageSrc(record.tecnicoAtribuido?.fotoPerfil);
+                const techImageSrc = getImageSrc(record.tecnicoAtribuido?.fotoUrl || record.tecnicoAtribuido?.fotoPerfil);
                 return (
                     <TechInfo>
                         <Avatar
