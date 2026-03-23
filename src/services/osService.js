@@ -123,3 +123,49 @@ export const deleteFoto = async (osId, fotoId) => {
         throw error.response?.data || new Error("Não foi possível excluir a foto.");
     }
 }; 
+
+// Registro de Tempo (edição apenas no web)
+export const getRegistrosTempoByOsId = async (osId) => {
+    try {
+        const response = await api.get(`/api/ordens-servico/${osId}/registros-tempo`);
+        return response.data;
+    } catch (error) {
+        // 404 pode acontecer se ainda não houver registros
+        if (error.response?.status === 404) return [];
+        console.error(`Erro ao buscar registros de tempo da OS ${osId}:`, error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível carregar os registros de tempo da OS.");
+    }
+};
+
+export const iniciarRegistroTempo = async (osId, tecnicoId) => {
+    try {
+        const response = await api.post(`/api/ordens-servico/${osId}/registros-tempo/iniciar`, {
+            tecnicoId
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Erro ao iniciar registro de tempo (OS ${osId} / tecnico ${tecnicoId}):`, error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível iniciar o registro de tempo.");
+    }
+};
+
+// horaTermino deve ser string ISO-8601 "YYYY-MM-DDTHH:mm:ss"
+export const finalizarRegistroTempo = async (osId, registroId, horaTermino) => {
+    try {
+        const body = horaTermino ? { horaTermino } : {};
+        const response = await api.put(`/api/ordens-servico/${osId}/registros-tempo/${registroId}/finalizar`, body);
+        return response.data;
+    } catch (error) {
+        console.error(`Erro ao finalizar/editar registro de tempo ${registroId} (OS ${osId}):`, error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível finalizar/editar o registro de tempo.");
+    }
+};
+
+export const deleteRegistroTempo = async (osId, registroId) => {
+    try {
+        await api.delete(`/api/ordens-servico/${osId}/registros-tempo/${registroId}`);
+    } catch (error) {
+        console.error(`Erro ao excluir registro de tempo ${registroId} (OS ${osId}):`, error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível excluir o registro de tempo.");
+    }
+};

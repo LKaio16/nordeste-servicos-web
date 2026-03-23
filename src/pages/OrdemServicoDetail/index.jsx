@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 import {
     ArrowLeftOutlined,
     DownloadOutlined,
@@ -30,6 +31,8 @@ import {
     Tag,
     Popconfirm,
     Modal,
+    DatePicker,
+    Table,
     Image,
     Avatar,
     Descriptions,
@@ -261,6 +264,13 @@ function OrdemServicoDetailPage() {
     const [uploadingFoto, setUploadingFoto] = useState(false);
     const [uploadInputKey, setUploadInputKey] = useState(0);
 
+    // Registros de tempo (somente no web)
+    const [registrosTempo, setRegistrosTempo] = useState([]);
+    const [isLoadingRegistrosTempo, setIsLoadingRegistrosTempo] = useState(false);
+    const [editTempoModalOpen, setEditTempoModalOpen] = useState(false);
+    const [tempoEditRegistroId, setTempoEditRegistroId] = useState(null);
+    const [tempoEditHoraTermino, setTempoEditHoraTermino] = useState(null); // dayjs
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -270,6 +280,18 @@ function OrdemServicoDetailPage() {
                 setFotos(fotosData);
                 const assinaturaData = await osService.getAssinaturaByOsId(id);
                 setAssinatura(assinaturaData);
+
+                // Registros de tempo
+                setIsLoadingRegistrosTempo(true);
+                try {
+                    const registrosData = await osService.getRegistrosTempoByOsId(id);
+                    setRegistrosTempo(registrosData || []);
+                } catch (e) {
+                    // Se falhar, não impede carregar o restante da tela
+                    setRegistrosTempo([]);
+                } finally {
+                    setIsLoadingRegistrosTempo(false);
+                }
             } catch (error) {
                 message.error('Erro ao carregar dados da OS: ' + error.message);
             } finally {
@@ -286,6 +308,51 @@ function OrdemServicoDetailPage() {
             setFotos(fotos.filter(foto => foto.id !== fotoId));
         } catch (error) {
             message.error('Erro ao excluir foto: ' + (error.message || 'Erro desconhecido'));
+        }
+    };
+
+    const refreshRegistrosTempo = async () => {
+        setIsLoadingRegistrosTempo(true);
+        try {
+            const registrosData = await osService.getRegistrosTempoByOsId(id);
+            setRegistrosTempo(registrosData || []);
+        } catch (e) {
+            setRegistrosTempo([]);
+        } finally {
+            setIsLoadingRegistrosTempo(false);
+        }
+    };
+
+    const openEditarTempo = (registro) => {
+        setTempoEditRegistroId(registro?.id ?? null);
+        const defaultHora = registro?.horaTermino ? dayjs(registro.horaTermino) : dayjs();
+        setTempoEditHoraTermino(defaultHora);
+        setEditTempoModalOpen(true);
+    };
+
+    const handleSalvarEdicaoTempo = async () => {
+        if (!tempoEditRegistroId) return;
+        try {
+            const horaTerminoStr = tempoEditHoraTermino
+                ? tempoEditHoraTermino.format('YYYY-MM-DDTHH:mm:ss')
+                : null;
+
+            await osService.finalizarRegistroTempo(id, tempoEditRegistroId, horaTerminoStr);
+            message.success('Registro de tempo atualizado com sucesso!');
+            setEditTempoModalOpen(false);
+            await refreshRegistrosTempo();
+        } catch (e) {
+            message.error('Erro ao atualizar registro de tempo.');
+        }
+    };
+
+    const handleFinalizarTempo = async (registroId) => {
+        try {
+            await osService.finalizarRegistroTempo(id, registroId);
+            message.success('Registro de tempo finalizado!');
+            await refreshRegistrosTempo();
+        } catch (e) {
+            message.error('Erro ao finalizar registro de tempo.');
         }
     };
 
@@ -731,6 +798,80 @@ function OrdemServicoDetailPage() {
                 </StyledCard>
 
                 <StyledCard title={
+                    <Space>
+                        <CalendarOutlined />
+                        <span>Registro de Tempo</span>
+                    </Space>
+                }>
+                    {isLoadingRegistrosTempo ? (
+                        <div style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
+                            Carregando registros de tempo...
+                        </div>
+                    ) : registrosTempo && registrosTempo.length > 0 ? (
+                        <Table
+                            size="small"
+                            rowKey="id"
+                            pagination={false}
+                            dataSource={registrosTempo}
+                            columns={[
+                                {
+                                    title: 'Técnico',
+                                    key: 'tecnico',
+                                    render: (_, record) => record?.nomeTecnico || `Técnico #${record?.tecnicoId ?? '-'}`,
+                                },
+                                {
+                                    title: 'Início',
+                                    key: 'inicio',
+                                    render: (_, record) => (record?.horaInicio ? formatDate(record.horaInicio) : 'N/A'),
+                                },
+                                {
+                                    title: 'Término',
+                                    key: 'termino',
+                                    render: (_, record) => (record?.horaTermino ? formatDate(record.horaTermino) : 'Em andamento'),
+                                },
+                                {
+                                    title: 'Horas',
+                                    key: 'horas',
+                                    render: (_, record) => {
+                                        const h = record?.horasTrabalhadas;
+                                        return h != null ? `${Number(h).toFixed(2)} h` : '--';
+                                    },
+                                },
+                                {
+                                    title: 'Ações',
+                                    key: 'acoes',
+                                    render: (_, record) => (
+                                        <Space>
+                                            {record?.horaTermino == null && (
+                                                <Button
+                                                    size="small"
+                                                    type="primary"
+                                                    icon={<CheckCircleOutlined />}
+                                                    onClick={() => handleFinalizarTempo(record.id)}
+                                                >
+                                                    Finalizar
+                                                </Button>
+                                            )}
+                                            <Button
+                                                size="small"
+                                                icon={<EditOutlined />}
+                                                onClick={() => openEditarTempo(record)}
+                                            >
+                                                Editar
+                                            </Button>
+                                        </Space>
+                                    ),
+                                },
+                            ]}
+                        />
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
+                            Nenhum registro de tempo para esta OS.
+                        </div>
+                    )}
+                </StyledCard>
+
+                <StyledCard title={
                     <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                         <Space>
                             <CameraOutlined />
@@ -841,6 +982,25 @@ function OrdemServicoDetailPage() {
                         </SignatureContainer>
                     </StyledCard>
                 )}
+
+                <Modal
+                    title="Editar registro de tempo"
+                    open={editTempoModalOpen}
+                    onCancel={() => setEditTempoModalOpen(false)}
+                    onOk={handleSalvarEdicaoTempo}
+                    okText="Salvar"
+                >
+                    <div style={{ marginBottom: 12, color: '#555' }}>
+                        Ajuste a <strong>hora de término</strong> para recalcular as horas trabalhadas.
+                    </div>
+                    <DatePicker
+                        style={{ width: '100%' }}
+                        showTime={{ format: 'HH:mm' }}
+                        format="YYYY-MM-DD HH:mm"
+                        value={tempoEditHoraTermino}
+                        onChange={(v) => setTempoEditHoraTermino(v)}
+                    />
+                </Modal>
 
             </StyledCard>
         </PageContainer>
