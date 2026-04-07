@@ -497,7 +497,8 @@ function OrcamentoCreatePage() {
                 setOrdensServicoFiltradas([]);
             } catch (fetchError) {
                 console.error("Erro ao carregar dados dos dropdowns:", fetchError);
-                message.error('Falha ao carregar dados da página.');
+                message.destroy();
+                message.error({ content: fetchError.message || 'Falha ao carregar dados da página.', duration: 6 });
             } finally {
                 setIsLoading(false);
             }
@@ -530,7 +531,8 @@ function OrcamentoCreatePage() {
             message.success('Orçamento criado com sucesso! Agora você pode adicionar itens.');
         } catch (submitError) {
             console.error("Erro ao criar orçamento:", submitError);
-            message.error(submitError.message || 'Falha ao criar o orçamento. Tente novamente.');
+            message.destroy();
+            message.error({ content: submitError.message || 'Falha ao criar o orçamento. Tente novamente.', duration: 6 });
         } finally {
             setIsSubmitting(false);
         }
@@ -547,7 +549,8 @@ function OrcamentoCreatePage() {
             navigate(`/admin/orcamentos/detalhes/${orcamentoId}`);
         } catch (error) {
             console.error("Erro ao finalizar orçamento:", error);
-            message.error('Falha ao finalizar o orçamento.');
+            message.destroy();
+            message.error({ content: error.message || 'Falha ao finalizar o orçamento.', duration: 6 });
         }
     };
 
@@ -603,7 +606,8 @@ function OrcamentoCreatePage() {
             message.success('Item removido com sucesso!');
         } catch (error) {
             console.error("Erro ao excluir item:", error);
-            message.error(error.message || 'Falha ao excluir o item.');
+            message.destroy();
+            message.error({ content: error.message || 'Falha ao excluir o item.', duration: 6 });
         }
     };
 
@@ -633,7 +637,8 @@ function OrcamentoCreatePage() {
             setEditingItem(null);
         } catch (error) {
             console.error("Erro ao salvar item:", error);
-            message.error(error.message || 'Falha ao salvar o item.');
+            message.destroy();
+            message.error({ content: error.message || 'Falha ao salvar o item.', duration: 6 });
         }
     };
 

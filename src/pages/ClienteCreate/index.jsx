@@ -263,7 +263,11 @@ function ClienteCreate() {
             navigate('/admin/clientes');
         } catch (error) {
             console.error('Erro ao criar cliente:', error);
-            message.error(error.message || 'Falha ao criar o cliente. Verifique os dados e tente novamente.');
+            message.destroy();
+            message.error({
+                content: error.message || 'Falha ao criar o cliente. Verifique os dados e tente novamente.',
+                duration: 6,
+            });
         } finally {
             setIsSubmitting(false);
         }

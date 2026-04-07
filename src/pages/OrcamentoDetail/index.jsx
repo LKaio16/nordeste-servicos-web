@@ -279,7 +279,8 @@ function OrcamentoDetailPage() {
 
                 // Debug removido - status funcionando corretamente
             } catch (err) {
-                message.error('Erro ao carregar detalhes do orçamento: ' + err.message);
+                message.destroy();
+                message.error({ content: 'Erro ao carregar detalhes do orçamento: ' + (err.message || 'Erro desconhecido'), duration: 6 });
             } finally {
                 setIsLoading(false);
             }
@@ -293,7 +294,8 @@ function OrcamentoDetailPage() {
             message.success('Orçamento excluído com sucesso!');
             navigate('/admin/orcamentos');
         } catch (err) {
-            message.error('Erro ao excluir orçamento: ' + err.message);
+            message.destroy();
+            message.error({ content: 'Erro ao excluir orçamento: ' + (err.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 
@@ -302,7 +304,8 @@ function OrcamentoDetailPage() {
             await orcamentoService.downloadOrcamentoPdf(id);
             message.success('Download iniciado!');
         } catch (err) {
-            message.error('Erro ao baixar PDF: ' + err.message);
+            message.destroy();
+            message.error({ content: 'Erro ao baixar PDF: ' + (err.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 
@@ -344,7 +347,8 @@ function OrcamentoDetailPage() {
             message.success('Conta a receber criada com sucesso!');
             navigate(`/admin/contas/editar/${contaCriada.id}`);
         } catch (err) {
-            message.error(err.response?.data?.message || 'Erro ao criar conta a receber.');
+            message.destroy();
+            message.error({ content: err.message || 'Erro ao criar conta a receber.', duration: 6 });
         } finally {
             setCriandoConta(false);
         }

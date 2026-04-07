@@ -236,7 +236,8 @@ const Clientes = () => {
             setClientes(data);
         } catch (err) {
             console.error('Erro ao buscar clientes:', err);
-            message.error(err.message || 'Não foi possível carregar a lista de clientes.');
+            message.destroy();
+            message.error({ content: err.message || 'Não foi possível carregar a lista de clientes.', duration: 6 });
         }
     }, [busca]);
 
@@ -270,7 +271,8 @@ const Clientes = () => {
             message.success('Cliente excluído com sucesso!');
         } catch (err) {
             console.error('Erro ao deletar cliente:', err);
-            message.error(err.message || 'Falha ao excluir o cliente. Verifique se ele não está associado a equipamentos ou ordens de serviço.');
+            message.destroy();
+            message.error({ content: err.message || 'Falha ao excluir o cliente. Verifique se ele não está associado a equipamentos ou ordens de serviço.', duration: 6 });
         }
     };
 
@@ -296,7 +298,8 @@ const Clientes = () => {
             message.success('Arquivo Excel baixado com sucesso!');
         } catch (err) {
             console.error('Erro ao baixar Excel:', err);
-            message.error(err.message || 'Falha ao baixar o arquivo Excel.');
+            message.destroy();
+            message.error({ content: err.message || 'Falha ao baixar o arquivo Excel.', duration: 6 });
         } finally {
             setIsDownloading(false);
         }

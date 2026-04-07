@@ -183,7 +183,8 @@ function RecibosPage() {
             setError(null);
         } catch (err) {
             setError(err.message);
-            message.error(err.message || 'Não foi possível carregar os recibos.');
+            message.destroy();
+            message.error({ content: err.message || 'Não foi possível carregar os recibos.', duration: 6 });
         }
     }, []);
 
@@ -208,7 +209,8 @@ function RecibosPage() {
             setRecibos(prev => prev.filter(r => r.id !== recibo.id));
             message.success('Recibo excluído com sucesso!');
         } catch (deleteError) {
-            message.error('Erro ao excluir recibo: ' + deleteError.message);
+            message.destroy();
+            message.error({ content: 'Erro ao excluir recibo: ' + (deleteError.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 
@@ -217,7 +219,8 @@ function RecibosPage() {
             await reciboService.downloadReciboPdf(recibo.id);
             message.success('Download iniciado!');
         } catch (downloadError) {
-            message.error('Erro ao baixar PDF: ' + downloadError.message);
+            message.destroy();
+            message.error({ content: 'Erro ao baixar PDF: ' + (downloadError.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 
@@ -242,7 +245,8 @@ function RecibosPage() {
             setIsModalOpen(false);
             await fetchRecibos();
         } catch (error) {
-            message.error('Erro ao criar recibo: ' + (error.message || 'Erro desconhecido'));
+            message.destroy();
+            message.error({ content: 'Erro ao criar recibo: ' + (error.message || 'Erro desconhecido'), duration: 6 });
         } finally {
             setIsCreating(false);
         }

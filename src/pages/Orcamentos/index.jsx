@@ -260,7 +260,8 @@ function OrcamentosPage() {
             setOrcamentos(prev => prev.filter(o => o.id !== orcamento.id));
             message.success('Orçamento excluído com sucesso!');
         } catch (deleteError) {
-            message.error('Erro ao excluir orçamento: ' + deleteError.message);
+            message.destroy();
+            message.error({ content: 'Erro ao excluir orçamento: ' + (deleteError.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 
@@ -269,7 +270,8 @@ function OrcamentosPage() {
             await orcamentoService.downloadOrcamentoPdf(orcamento.id);
             message.success('Download iniciado!');
         } catch (downloadError) {
-            message.error('Erro ao baixar PDF: ' + downloadError.message);
+            message.destroy();
+            message.error({ content: 'Erro ao baixar PDF: ' + (downloadError.message || 'Erro desconhecido'), duration: 6 });
         }
     };
 

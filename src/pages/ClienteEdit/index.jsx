@@ -270,7 +270,8 @@ function ClienteEdit() {
                 });
             } catch (err) {
                 console.error('Erro ao buscar dados do cliente:', err);
-                message.error(err.message || 'Não foi possível carregar os dados do cliente.');
+                message.destroy();
+                message.error({ content: err.message || 'Não foi possível carregar os dados do cliente.', duration: 6 });
             } finally {
                 setIsLoading(false);
             }
@@ -295,7 +296,8 @@ function ClienteEdit() {
             navigate(`/admin/clientes/detalhes/${id}`);
         } catch (err) {
             console.error('Erro ao atualizar cliente:', err);
-            message.error(err.message || 'Falha ao atualizar cliente.');
+            message.destroy();
+            message.error({ content: err.message || 'Falha ao atualizar cliente.', duration: 6 });
         } finally {
             setIsSubmitting(false);
         }
