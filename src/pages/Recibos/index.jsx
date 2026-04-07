@@ -180,8 +180,10 @@ function RecibosPage() {
         try {
             const data = await reciboService.getAllRecibos();
             setRecibos(data);
+            setError(null);
         } catch (err) {
             setError(err.message);
+            message.error(err.message || 'Não foi possível carregar os recibos.');
         }
     }, []);
 

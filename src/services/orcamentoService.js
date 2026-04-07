@@ -1,4 +1,5 @@
 import api from './api';
+import { getApiErrorMessage } from '../utils/errorUtils';
 
 const getAllOrcamentos = async () => {
     try {
@@ -6,7 +7,7 @@ const getAllOrcamentos = async () => {
         return response.data;
     } catch (error) {
         console.error("Erro ao buscar Orçamentos:", error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível carregar os Orçamentos.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível carregar os Orçamentos."));
     }
 };
 
@@ -16,7 +17,7 @@ const getOrcamentoById = async (id) => {
         return response.data;
     } catch (error) {
         console.error(`Erro ao buscar Orçamento ${id}:`, error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível carregar os detalhes do Orçamento.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível carregar os detalhes do Orçamento."));
     }
 };
 
@@ -26,7 +27,7 @@ const createOrcamento = async (orcamentoData) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao criar Orçamento:', error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível criar o Orçamento.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível criar o Orçamento."));
     }
 };
 
@@ -36,7 +37,7 @@ const updateOrcamento = async (id, orcamentoData) => {
         return response.data;
     } catch (error) {
         console.error(`Erro ao atualizar Orçamento ${id}:`, error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível atualizar o Orçamento.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível atualizar o Orçamento."));
     }
 };
 
@@ -65,7 +66,7 @@ const downloadOrcamentoPdf = async (orcamentoId) => {
 
     } catch (error) {
         console.error(`Erro ao baixar o PDF do Orçamento ${orcamentoId}:`, error);
-        alert("Não foi possível baixar o PDF.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível baixar o PDF."));
     }
 };
 
@@ -74,7 +75,7 @@ const deleteOrcamento = async (id) => {
         await api.delete(`/api/orcamentos/${id}`);
     } catch (error) {
         console.error(`Erro ao deletar o Orçamento ${id}:`, error);
-        throw new Error("Não foi possível deletar o Orçamento.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível deletar o Orçamento."));
     }
 };
 

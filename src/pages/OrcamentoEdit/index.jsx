@@ -390,7 +390,7 @@ function OrcamentoEditPage() {
                 setTiposServico(tiposData);
                 setItens(itensData);
             } catch (err) {
-                message.error('Falha ao carregar dados do orçamento.');
+                message.error(err.message || 'Falha ao carregar dados do orçamento.');
                 console.error(err);
             } finally {
                 setIsLoading(false);
@@ -430,7 +430,7 @@ function OrcamentoEditPage() {
             navigate(`/admin/orcamentos/detalhes/${id}`);
             }, 1000);
         } catch (err) {
-            message.error('Falha ao atualizar o orçamento.');
+            message.error(err.message || 'Falha ao atualizar o orçamento.');
             console.error(err);
         } finally {
             setIsSubmitting(false);
@@ -477,7 +477,7 @@ function OrcamentoEditPage() {
             message.success('Item removido com sucesso!');
         } catch (error) {
             console.error("Erro ao excluir item:", error);
-            message.error('Falha ao excluir o item.');
+            message.error(error.message || 'Falha ao excluir o item.');
         }
     };
 

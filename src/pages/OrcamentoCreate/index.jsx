@@ -530,7 +530,7 @@ function OrcamentoCreatePage() {
             message.success('Orçamento criado com sucesso! Agora você pode adicionar itens.');
         } catch (submitError) {
             console.error("Erro ao criar orçamento:", submitError);
-            message.error('Falha ao criar o orçamento. Tente novamente.');
+            message.error(submitError.message || 'Falha ao criar o orçamento. Tente novamente.');
         } finally {
             setIsSubmitting(false);
         }
@@ -603,7 +603,7 @@ function OrcamentoCreatePage() {
             message.success('Item removido com sucesso!');
         } catch (error) {
             console.error("Erro ao excluir item:", error);
-            message.error('Falha ao excluir o item.');
+            message.error(error.message || 'Falha ao excluir o item.');
         }
     };
 
@@ -633,7 +633,7 @@ function OrcamentoCreatePage() {
             setEditingItem(null);
         } catch (error) {
             console.error("Erro ao salvar item:", error);
-            message.error('Falha ao salvar o item.');
+            message.error(error.message || 'Falha ao salvar o item.');
         }
     };
 

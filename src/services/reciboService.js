@@ -1,4 +1,5 @@
 import api from './api';
+import { getApiErrorMessage } from '../utils/errorUtils';
 
 const getAllRecibos = async () => {
     try {
@@ -6,7 +7,7 @@ const getAllRecibos = async () => {
         return response.data;
     } catch (error) {
         console.error("Erro ao buscar Recibos:", error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível carregar os Recibos.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível carregar os Recibos."));
     }
 };
 
@@ -16,7 +17,7 @@ const getReciboById = async (id) => {
         return response.data;
     } catch (error) {
         console.error(`Erro ao buscar Recibo ${id}:`, error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível carregar os detalhes do Recibo.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível carregar os detalhes do Recibo."));
     }
 };
 
@@ -26,7 +27,7 @@ const createRecibo = async (reciboData) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao criar Recibo:', error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível criar o Recibo.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível criar o Recibo."));
     }
 };
 
@@ -56,7 +57,7 @@ const generateReciboPdf = async (reciboData) => {
         return true;
     } catch (error) {
         console.error('Erro ao gerar PDF do Recibo:', error.response?.data || error.message);
-        throw error.response?.data || new Error("Não foi possível gerar o PDF do Recibo.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível gerar o PDF do Recibo."));
     }
 };
 
@@ -85,7 +86,7 @@ const downloadReciboPdf = async (reciboId) => {
 
     } catch (error) {
         console.error(`Erro ao baixar o PDF do Recibo ${reciboId}:`, error);
-        throw error.response?.data || new Error("Não foi possível baixar o PDF.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível baixar o PDF."));
     }
 };
 
@@ -94,7 +95,7 @@ const deleteRecibo = async (id) => {
         await api.delete(`/api/recibos/${id}`);
     } catch (error) {
         console.error(`Erro ao deletar o Recibo ${id}:`, error);
-        throw new Error("Não foi possível deletar o Recibo.");
+        throw new Error(getApiErrorMessage(error, "Não foi possível deletar o Recibo."));
     }
 };
 
