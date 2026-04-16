@@ -186,3 +186,33 @@ export const deleteRegistroTempo = async (osId, registroId) => {
         throw error.response?.data || new Error("Não foi possível excluir o registro de tempo.");
     }
 };
+
+/** Lista OS com lembrete pós-fechamento ativo (ordenadas por data alvo). */
+export const getLembretesAtivos = async () => {
+    try {
+        const response = await api.get('/api/ordens-servico/lembretes');
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao listar lembretes:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Não foi possível carregar os lembretes.');
+    }
+};
+
+/**
+ * @param {string|number} id
+ * @param {{ ativo: boolean, diasAposFechamento?: number }} payload
+ */
+export const patchOrdemServicoLembrete = async (id, { ativo, diasAposFechamento }) => {
+    try {
+        const body = { ativo };
+        if (ativo) {
+            body.diasAposFechamento = diasAposFechamento;
+        }
+        const response = await api.patch(`/api/ordens-servico/${id}/lembrete`, body);
+        return response.data;
+    } catch (error) {
+        console.error(`Erro ao atualizar lembrete da OS ${id}:`, error.response?.data || error.message);
+        const msg = error.response?.data?.message || error.message;
+        throw new Error(typeof msg === 'string' ? msg : 'Não foi possível atualizar o lembrete.');
+    }
+};

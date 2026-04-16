@@ -29,6 +29,10 @@ const getDashboardStats = async () => {
                     name: t.name,
                     "Ordens Atribuídas": Number(t.ordensAtribuidas ?? 0)
                 }))
+            },
+            lembretes: {
+                proximos7Dias: Number(d.lembretesProximos7Dias ?? 0),
+                atrasados: Number(d.lembretesAtrasados ?? 0)
             }
         };
 

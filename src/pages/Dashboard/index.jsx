@@ -741,6 +741,32 @@ function DashboardPage() {
                     </MetricCard>
                 </MetricsRow>
 
+                <Panel $d="0.32s" $p="18px 24px" style={{ marginBottom: 22 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 16
+                        }}
+                    >
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
+                            <span style={{ fontSize: 14, color: '#475569' }}>
+                                <strong style={{ color: '#0c2d6b' }}>Lembretes (próximos 7 dias):</strong>{' '}
+                                {stats?.lembretes?.proximos7Dias ?? 0}
+                            </span>
+                            <span style={{ fontSize: 14, color: '#475569' }}>
+                                <strong style={{ color: '#dc2626' }}>Lembretes atrasados:</strong>{' '}
+                                {stats?.lembretes?.atrasados ?? 0}
+                            </span>
+                        </div>
+                        <SeeAll to="/admin/os/lembretes">
+                            Ver lista de lembretes <RightOutlined style={{ fontSize: 10 }} />
+                        </SeeAll>
+                    </div>
+                </Panel>
+
                 <QuickActions>
                     <QuickAction to="/admin/os/novo" $d="0.3s">
                         <QAIcon><FileTextOutlined /></QAIcon>

@@ -22,6 +22,7 @@ import OrdensServico from './pages/OrdensServico';
 import OrdemServicoCreate from './pages/OrdemServicoCreate';
 import OrdemServicoEdit from './pages/OrdemServicoEdit';
 import OrdemServicoDetail from './pages/OrdemServicoDetail';
+import OsLembretes from './pages/OsLembretes';
 import Usuarios from './pages/Usuarios';
 import UsuarioCreate from './pages/UsuarioCreate';
 import UsuarioEdit from './pages/UsuarioEdit';
@@ -90,6 +91,7 @@ function AppContent() {
                   <Route path="orcamentos/detalhes/:id" element={<OrcamentoDetail />} />
 
                   <Route path="os" element={<OrdensServico />} />
+                  <Route path="os/lembretes" element={<OsLembretes />} />
                   <Route path="os/novo" element={<OrdemServicoCreate />} />
                   <Route path="os/editar/:id" element={<OrdemServicoEdit />} />
                   <Route path="os/detalhes/:id" element={<OrdemServicoDetail />} />

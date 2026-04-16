@@ -15,6 +15,7 @@ import {
   FiChevronRight,
   FiPackage,
   FiCreditCard,
+  FiBell,
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.png';
@@ -329,6 +330,7 @@ const navGroups = [
     title: 'Operacional',
     items: [
       { path: '/admin/os', icon: FiFileText, text: 'Ordens de Serviço' },
+      { path: '/admin/os/lembretes', icon: FiBell, text: 'Lembretes de OS' },
       { path: '/admin/orcamentos', icon: FiArchive, text: 'Orçamentos' },
       { path: '/admin/recibos', icon: FiDollarSign, text: 'Recibos' },
     ],
@@ -380,8 +382,12 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
     navigate('/login');
   };
 
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path) => {
+    if (path === '/admin/os' && location.pathname.startsWith('/admin/os/lembretes')) {
+      return false;
+    }
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   const imgSrc = getImageSrc(user?.fotoUrl || user?.fotoPerfil);
 

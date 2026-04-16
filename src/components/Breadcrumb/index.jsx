@@ -69,6 +69,7 @@ const Breadcrumb = () => {
             'fornecedores': 'Fornecedores',
             'contas': 'Contas',
             'notas-fiscais': 'Notas Fiscais',
+            'lembretes': 'Lembretes de OS',
         };
 
         if (/^\d+$/.test(pathname)) {

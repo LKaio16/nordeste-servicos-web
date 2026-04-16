@@ -12,7 +12,8 @@ import {
     FileTextOutlined,
     CameraOutlined,
     EditFilled,
-    UploadOutlined
+    UploadOutlined,
+    BellOutlined
 } from '@ant-design/icons';
 import * as osService from '../../services/osService';
 import {
@@ -31,7 +32,9 @@ import {
     Image,
     Avatar,
     Descriptions,
-    Statistic
+    Statistic,
+    Switch,
+    InputNumber
 } from 'antd';
 import styled, { keyframes } from 'styled-components';
 import { FiArrowLeft, FiEdit2, FiTrash2, FiDownload } from 'react-icons/fi';
@@ -356,6 +359,10 @@ function OrdemServicoDetailPage() {
     const [tempoEditRegistroId, setTempoEditRegistroId] = useState(null);
     const [tempoEditHoraTermino, setTempoEditHoraTermino] = useState(null); // dayjs
 
+    const [lembreteAtivo, setLembreteAtivo] = useState(false);
+    const [lembreteDias, setLembreteDias] = useState(30);
+    const [lembreteSaving, setLembreteSaving] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -385,6 +392,12 @@ function OrdemServicoDetailPage() {
         };
         fetchData();
     }, [id]);
+
+    useEffect(() => {
+        if (!os) return;
+        setLembreteAtivo(!!os.lembreteAtivo);
+        setLembreteDias(os.lembreteDiasAposFechamento ?? 30);
+    }, [os]);
 
     const handleDeleteFoto = async (fotoId) => {
         try {
@@ -541,6 +554,21 @@ function OrdemServicoDetailPage() {
         });
     };
 
+    const formatLembreteDataAlvo = (v) => {
+        if (v == null || v === '') return '—';
+        if (typeof v === 'string') return dayjs(v).format('DD/MM/YYYY');
+        if (Array.isArray(v) && v.length >= 3) {
+            return dayjs(new Date(v[0], (v[1] || 1) - 1, v[2] || 1)).format('DD/MM/YYYY');
+        }
+        return formatDate(v);
+    };
+
+    const rawStatus = (s) => {
+        if (!s) return '';
+        if (typeof s === 'string') return s;
+        return s.name || s.status || '';
+    };
+
     // Função para extrair o valor do status/prioridade
     const extractValue = (value) => {
         if (!value) return 'N/A';
@@ -595,6 +623,33 @@ function OrdemServicoDetailPage() {
         }
     };
 
+    const handleSalvarLembrete = async () => {
+        if (!os?.dataFechamento) {
+            message.warning('Esta OS não possui data de fechamento.');
+            return;
+        }
+        if (lembreteAtivo) {
+            const d = Number(lembreteDias);
+            if (!d || d < 1 || d > 365) {
+                message.error('Informe entre 1 e 365 dias após o fechamento.');
+                return;
+            }
+        }
+        setLembreteSaving(true);
+        try {
+            const updated = await osService.patchOrdemServicoLembrete(id, {
+                ativo: lembreteAtivo,
+                diasAposFechamento: lembreteAtivo ? Number(lembreteDias) : undefined
+            });
+            setOs(updated);
+            message.success('Lembrete atualizado.');
+        } catch (e) {
+            message.error(e?.message || 'Erro ao salvar lembrete.');
+        } finally {
+            setLembreteSaving(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <Page>
@@ -640,6 +695,13 @@ function OrdemServicoDetailPage() {
             </Page>
         );
     }
+
+    const statusStr =
+        rawStatus(os.status) ||
+        String(extractValue(os.status) || '')
+            .replace(/\s+/g, '_')
+            .toUpperCase();
+    const isOsFechada = statusStr === 'CONCLUIDA' || statusStr === 'ENCERRADA';
 
     return (
         <Page>
@@ -798,6 +860,67 @@ function OrdemServicoDetailPage() {
                     </Row>
                     </SectionBody>
                 </Section>
+
+                {isOsFechada && (
+                    <Section $d="0.14s">
+                        <SectionHeader>
+                            <BellOutlined />
+                            <h3>Lembrete pós-fechamento</h3>
+                        </SectionHeader>
+                        <SectionBody>
+                            <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                                Dias corridos após a data de fechamento da OS. O lembrete não fica vinculado a um
+                                usuário.
+                            </Text>
+                            {!os.dataFechamento ? (
+                                <Text type="warning">
+                                    Sem data de fechamento registrada — não é possível definir lembrete.
+                                </Text>
+                            ) : (
+                                <>
+                                    <Row gutter={[24, 16]} align="middle">
+                                        <Col xs={24} sm={12}>
+                                            <Space align="center" wrap>
+                                                <Text strong>Lembrete ativo</Text>
+                                                <Switch checked={lembreteAtivo} onChange={setLembreteAtivo} />
+                                            </Space>
+                                        </Col>
+                                        {lembreteAtivo && (
+                                            <Col xs={24} sm={12}>
+                                                <Space align="center" wrap>
+                                                    <Text strong>Dias após o fechamento</Text>
+                                                    <InputNumber
+                                                        min={1}
+                                                        max={365}
+                                                        value={lembreteDias}
+                                                        onChange={(v) => setLembreteDias(v ?? 30)}
+                                                    />
+                                                </Space>
+                                            </Col>
+                                        )}
+                                    </Row>
+                                    <div style={{ marginTop: 16 }}>
+                                        <Text type="secondary">Data alvo atual: </Text>
+                                        <Text strong>{formatLembreteDataAlvo(os.lembreteDataAlvo)}</Text>
+                                        {lembreteAtivo && (
+                                            <Text type="secondary" style={{ marginLeft: 8 }}>
+                                                (atualize ao salvar para recalcular)
+                                            </Text>
+                                        )}
+                                    </div>
+                                    <Button
+                                        type="primary"
+                                        loading={lembreteSaving}
+                                        onClick={handleSalvarLembrete}
+                                        style={{ marginTop: 16 }}
+                                    >
+                                        Salvar lembrete
+                                    </Button>
+                                </>
+                            )}
+                        </SectionBody>
+                    </Section>
+                )}
 
                 <Section $d="0.18s">
                     <SectionHeader>
