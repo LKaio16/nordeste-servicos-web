@@ -1,240 +1,515 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import {
-    ArrowLeftOutlined,
-    PlusOutlined,
-    ReloadOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    UserOutlined,
-    EyeOutlined
-} from '@ant-design/icons';
+import styled, { keyframes, css } from 'styled-components';
 import * as usuarioService from '../../services/usuarioService';
+import { message, Select } from 'antd';
 import {
-    Table,
-    Button,
-    Space,
-    Popconfirm,
-    message,
-    Card,
-    Typography,
-    Tooltip,
-    Avatar,
-    Tag,
-    Spin
-} from 'antd';
+    FiPlus,
+    FiRefreshCw,
+    FiEdit2,
+    FiTrash2,
+    FiSearch,
+    FiX,
+    FiChevronLeft,
+    FiChevronRight,
+    FiAlertCircle,
+    FiUsers,
+    FiEye,
+    FiMail,
+} from 'react-icons/fi';
 
-// Styled Components
-const PageContainer = styled.div`
-  padding: 0 24px 24px 24px;
-  background: #f8f9fa;
-  min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
+`;
+const spin = keyframes`
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 `;
 
-const StyledCard = styled(Card)`
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
-  border: none;
-  overflow: hidden;
-  margin-bottom: 24px;
-  
-  .ant-card-head {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
-    border-bottom: none;
-    
-    .ant-card-head-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-  }
-  
-  .ant-card-body {
-    padding: 0 24px 24px 24px;
-  }
+const RefreshCwIcon = styled(FiRefreshCw)`
+    ${(p) =>
+        p.$spinning &&
+        css`
+            animation: ${spin} 0.8s linear infinite;
+        `}
 `;
 
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  color: #333;
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
 `;
-
-const TitleStyled = styled(Typography.Title)`
-  color: #00529b !important;
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 28px !important;
-`;
-
-const ActionButtons = styled(Space)`
-  .ant-btn {
-    border-radius: 8px;
-    font-weight: 500;
-    height: 40px;
-    padding: 0 20px;
-    
-    &.ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-      border: none;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-      
-      &:hover {
-        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
-      }
-    }
-    
-    &.ant-btn-default {
-      background: white;
-      border: 1px solid #d9d9d9;
-      color: #333;
-      
-      &:hover {
-        background: #f5f5f5;
-        border-color: #00529b;
-        color: #00529b;
-      }
-    }
-  }
-`;
-
-const StyledTable = styled(Table)`
-  .ant-table {
-    border-radius: 12px;
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 36px 36px 80px;
+    position: relative;
     overflow: hidden;
-  }
-  
-  .ant-table-thead > tr > th {
-    background: #fff;
-    border-bottom: 2px solid #00529b;
-    color: #00529b;
-    font-weight: 600;
-    font-size: 14px;
-    text-align: center;
-  }
-  
-  .ant-table-tbody > tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
-      transform: translateY(-1px);
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    &::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
     }
-  }
-  
-  .ant-table-tbody > tr > td {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 16px 12px;
-    vertical-align: middle;
-  }
+    @media (max-width: 768px) {
+        margin: -16px -16px 0;
+        padding: 24px 20px 70px;
+    }
 `;
-
-const ActionButton = styled(Button)`
-  border-radius: 6px;
-  font-weight: 500;
-  height: 32px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  
-  &.ant-btn-primary {
-    background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-    border: none;
-    
-    &:hover {
-      background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-      transform: translateY(-1px);
-    }
-  }
-  
-  &.ant-btn-default {
-    background: white;
-    border: 1px solid #d9d9d9;
-    color: #333;
-    
-    &:hover {
-      background: #f5f5f5;
-      border-color: #00529b;
-      color: #00529b;
-    }
-  }
-  
-  &.ant-btn-dangerous {
-    border-color: #ff4d4f;
-    color: #ff4d4f;
-    
-    &:hover {
-      background: #ff4d4f;
-      border-color: #ff4d4f;
-      color: white;
-    }
-  }
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  
-  .ant-avatar {
-    flex-shrink: 0;
-  }
-  
-  .user-details {
+const HeroInner = styled.div`
+    position: relative;
+    z-index: 1;
     display: flex;
-    flex-direction: column;
-    
-    .user-name {
-      font-weight: 600;
-      color: #00529b;
-      font-size: 14px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+`;
+const HeroLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
     }
-    
-    .user-email {
-      font-size: 12px;
-      color: #666;
+`;
+const HeroIcon = styled.div`
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+`;
+const HeroCount = styled.span`
+    display: inline-flex;
+    align-items: center;
+    margin-left: 12px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+`;
+const HeroActions = styled.div`
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+`;
+const Btn = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
-  }
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+`;
+const PrimaryBtn = styled(Btn)`
+    background: #fff;
+    color: #1a4494;
+    &:hover:not(:disabled) {
+        background: #f0f7ff;
+        transform: translateY(-1px);
+    }
+`;
+const GhostBtn = styled(Btn)`
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+const Content = styled.div`
+    margin-top: -48px;
+    position: relative;
+    z-index: 2;
+`;
+const FiltersCard = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(12, 45, 107, 0.06);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+`;
+const FiltersRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+`;
+const SearchPanel = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(12, 45, 107, 0.1);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    @media (max-width: 600px) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+`;
+const SearchInput = styled.div`
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f4f7fb;
+    border: 1.5px solid #eef2f9;
+    border-radius: 12px;
+    &:focus-within {
+        border-color: #1a4494;
+        box-shadow: 0 0 0 3px rgba(26, 68, 148, 0.1);
+        background: #fff;
+    }
+    svg {
+        color: #6b86b8;
+        flex-shrink: 0;
+    }
+    input {
+        flex: 1;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 14px;
+        font-family: inherit;
+        color: #0c2d6b;
+        &::placeholder {
+            color: #a8b8d0;
+        }
+    }
+`;
+const ClearBtn = styled.button`
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: #dde4f0;
+    color: #6b86b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+const SearchBtn = styled(Btn)`
+    background: #1a4494;
+    color: #fff;
+    &:hover:not(:disabled) {
+        background: #0c2d6b;
+    }
+`;
+const TableWrapper = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(12, 45, 107, 0.06);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    overflow-x: auto;
+`;
+const THead = styled.div`
+    display: grid;
+    grid-template-columns: minmax(200px, 1.4fr) 120px 100px 132px;
+    min-width: 680px;
+    column-gap: 12px;
+    padding: 0 24px;
+    background: #f8faff;
+    border-bottom: 2px solid #eef2f9;
+    @media (max-width: 768px) {
+        display: none;
+    }
+`;
+const TH = styled.div`
+    padding: 14px 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b86b8;
+`;
+const TRow = styled.div`
+    display: grid;
+    grid-template-columns: minmax(200px, 1.4fr) 120px 100px 132px;
+    min-width: 680px;
+    column-gap: 12px;
+    padding: 0 24px;
+    align-items: center;
+    border-bottom: 1px solid #f5f8fd;
+    cursor: pointer;
+    &:hover {
+        background: #f8faff;
+    }
+    @media (max-width: 768px) {
+        min-width: 0;
+        grid-template-columns: 1fr;
+        padding: 16px 20px;
+        gap: 10px;
+    }
+`;
+const TD = styled.div`
+    padding: 16px 0;
+    min-width: 0;
+    @media (max-width: 768px) {
+        padding: 0;
+    }
+`;
+const UserCell = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+const UserAvatar = styled.div`
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1a4494, #2b6fc2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+`;
+const UserName = styled.div`
+    font-size: 15px;
+    font-weight: 700;
+    color: #0c2d6b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+const UserEmail = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b86b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    svg {
+        flex-shrink: 0;
+    }
+`;
+const PerfilPill = styled.span`
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: ${(p) => (p.$admin ? '#a61b1b' : '#237804')};
+    background: ${(p) => (p.$admin ? '#fff1f0' : '#e6f7e6')};
+`;
+const MutedCell = styled.div`
+    font-size: 14px;
+    color: #334155;
+`;
+const ActionsCell = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+`;
+const ActionBtn = styled.button`
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid #eef2f9;
+    background: #fff;
+    color: #6b86b8;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    &:hover {
+        color: #1a4494;
+    }
+`;
+const ViewBtn = styled(ActionBtn)`
+    &:hover {
+        color: #1a4494;
+        background: #e8f1ff;
+    }
+`;
+const DeleteBtn = styled(ActionBtn)`
+    &:hover {
+        color: #dc2626;
+        border-color: #fecaca;
+        background: #fef2f2;
+    }
+`;
+const LoadingOverlay = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 24px;
+    svg {
+        animation: ${spin} 0.8s linear infinite;
+        color: #1a4494;
+    }
+`;
+const EmptyState = styled.div`
+    text-align: center;
+    color: #6b86b8;
+    padding: 64px 24px;
+`;
+const MobileLabel = styled.span`
+    display: none;
+    font-size: 11px;
+    color: #a8b8d0;
+    text-transform: uppercase;
+    font-weight: 700;
+    @media (max-width: 768px) {
+        display: block;
+    }
+`;
+const Pagination = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid #f5f8fd;
+    flex-wrap: wrap;
+    gap: 12px;
+`;
+const PagInfo = styled.span`
+    font-size: 13px;
+    color: #6b86b8;
+`;
+const PagControls = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+`;
+const PagBtn = styled.button`
+    min-width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid ${(p) => (p.$active ? '#1a4494' : '#eef2f9')};
+    background: ${(p) => (p.$active ? '#1a4494' : '#fff')};
+    color: ${(p) => (p.$active ? '#fff' : '#6b86b8')};
+    cursor: pointer;
+`;
+const PerPageSelect = styled.select`
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #eef2f9;
+    color: #6b86b8;
+    margin-left: 8px;
+`;
+const ConfirmOverlay = styled.div`
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 30, 61, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+`;
+const ConfirmBox = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    h3 {
+        margin: 0 0 8px;
+        color: #0c2d6b;
+    }
+    p {
+        color: #6b86b8;
+        margin: 0 0 24px;
+    }
+`;
+const ConfirmActions = styled.div`
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+`;
+const ConfirmBtn = styled(Btn)`
+    padding: 10px 24px;
+    font-size: 14px;
+`;
+const CancelConfirmBtn = styled(ConfirmBtn)`
+    background: #f4f7fb;
+    color: #6b86b8;
+`;
+const DeleteConfirmBtn = styled(ConfirmBtn)`
+    background: #dc2626;
+    color: #fff;
 `;
 
-const ProfileTag = styled(Tag)`
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 12px;
-  padding: 4px 8px;
-  border: none;
-  
-  &.admin {
-    background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
-    color: white;
-  }
-  
-  &.tecnico {
-    background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-    color: white;
-  }
-`;
+const PERFIL_OPTIONS = [
+    { value: 'ADMIN', label: 'Administrador' },
+    { value: 'TECNICO', label: 'Técnico' },
+];
+
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0]?.toUpperCase() || '?';
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getProfileLabel(perfil) {
+    if (perfil === 'ADMIN') return 'Admin';
+    if (perfil === 'TECNICO') return 'Técnico';
+    return perfil || '—';
+}
 
 function UsuariosPage() {
     const [usuarios, setUsuarios] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [searchInput, setSearchInput] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filtroPerfil, setFiltroPerfil] = useState(undefined);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const navigate = useNavigate();
 
     const fetchUsuarios = useCallback(async () => {
         try {
             const data = await usuarioService.getAllUsuarios();
-            setUsuarios(data);
+            setUsuarios(Array.isArray(data) ? data : []);
         } catch (err) {
             message.error('Erro ao carregar usuários.');
         }
@@ -245,7 +520,7 @@ function UsuariosPage() {
             setIsLoading(true);
             await fetchUsuarios();
             setIsLoading(false);
-        }
+        };
         loadData();
     }, [fetchUsuarios]);
 
@@ -255,174 +530,257 @@ function UsuariosPage() {
         setIsRefreshing(false);
     };
 
-    const handleRowClick = (record) => {
-        navigate(`/admin/usuarios/detalhes/${record.id}`);
-    };
+    const filtered = useMemo(() => {
+        const q = searchTerm.trim().toLowerCase();
+        return usuarios.filter((u) => {
+            if (filtroPerfil && u.perfil !== filtroPerfil) return false;
+            if (!q) return true;
+            const nome = (u.nome || '').toLowerCase();
+            const email = (u.email || '').toLowerCase();
+            const cracha = (u.cracha || '').toLowerCase();
+            return nome.includes(q) || email.includes(q) || cracha.includes(q);
+        });
+    }, [usuarios, searchTerm, filtroPerfil]);
 
-    const handleDelete = async (id) => {
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, filtroPerfil]);
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await usuarioService.deleteUsuario(id);
+            await usuarioService.deleteUsuario(deleteTarget.id);
             message.success('Usuário excluído com sucesso!');
-            setUsuarios(prev => prev.filter(u => u.id !== id));
+            setUsuarios((prev) => prev.filter((u) => u.id !== deleteTarget.id));
         } catch (err) {
-            message.error('Erro ao excluir usuário.');
+            message.error(err.response?.data?.message || 'Erro ao excluir usuário.');
         }
+        setDeleteTarget(null);
     };
 
-    const getProfileColor = (perfil) => {
-        switch (perfil) {
-            case 'ADMIN':
-                return 'red';
-            case 'TECNICO':
-                return 'green';
-            default:
-                return 'default';
-        }
-    };
+    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage) || 1);
+    const paginated = useMemo(() => {
+        const start = (page - 1) * perPage;
+        return filtered.slice(start, start + perPage);
+    }, [filtered, page, perPage]);
 
-    const getProfileText = (perfil) => {
-        switch (perfil) {
-            case 'ADMIN':
-                return 'Admin';
-            case 'TECNICO':
-                return 'Técnico';
-            default:
-                return perfil;
-        }
-    };
+    const startItem = filtered.length > 0 ? (page - 1) * perPage + 1 : 0;
+    const endItem = filtered.length > 0 ? Math.min(page * perPage, filtered.length) : 0;
 
-    const columns = [
-        {
-            title: 'Usuário',
-            dataIndex: 'nome',
-            key: 'nome',
-            width: 300,
-            render: (text, record) => (
-                <UserInfo>
-                    <Avatar
-                        size={40}
-                        icon={<UserOutlined />}
-                        style={{ backgroundColor: '#00529b' }}
-                    />
-                    <div className="user-details">
-                        <div className="user-name">{record.nome}</div>
-                        <div className="user-email">{record.email}</div>
-                    </div>
-                </UserInfo>
-            ),
-        },
-        {
-            title: 'Perfil',
-            dataIndex: 'perfil',
-            key: 'perfil',
-            width: 120,
-            render: (perfil) => (
-                <ProfileTag color={getProfileColor(perfil)}>
-                    {getProfileText(perfil)}
-                </ProfileTag>
-            ),
-            filters: [
-                { text: 'Admin', value: 'ADMIN' },
-                { text: 'Técnico', value: 'TECNICO' },
-            ],
-            onFilter: (value, record) => record.perfil === value,
-        },
-        {
-            title: 'Crachá',
-            dataIndex: 'cracha',
-            key: 'cracha',
-            width: 120,
-            render: (cracha) => cracha || '-',
-        },
-        {
-            title: 'Ações',
-            key: 'actions',
-            width: 150,
-            render: (_, record) => (
-                <Space onClick={(e) => e.stopPropagation()}>
-                    <Tooltip title="Ver detalhes">
-                        <ActionButton
-                            type="primary"
-                            icon={<EyeOutlined />}
-                            onClick={() => navigate(`/admin/usuarios/detalhes/${record.id}`)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Editar">
-                        <ActionButton
-                            icon={<EditOutlined />}
-                            onClick={() => navigate(`/admin/usuarios/editar/${record.id}`)}
-                        />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Excluir Usuário"
-                        description={`Deseja realmente excluir o usuário "${record.nome}"?`}
-                        onConfirm={() => handleDelete(record.id)}
-                        okText="Sim"
-                        cancelText="Não"
-                        okType="danger"
-                    >
-                        <Tooltip title="Excluir">
-                            <ActionButton
-                                danger
-                                icon={<DeleteOutlined />}
-                            />
-                        </Tooltip>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-    ];
+    const pages = useMemo(() => {
+        const res = [];
+        const maxVisible = 5;
+        let start = Math.max(1, page - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+        for (let i = start; i <= end; i++) res.push(i);
+        return res;
+    }, [page, totalPages]);
+
+    useEffect(() => {
+        if (page > totalPages && totalPages > 0) setPage(totalPages);
+    }, [page, totalPages]);
 
     return (
-        <PageContainer>
-            <HeaderContainer>
-                <TitleStyled level={2}>
-                    <Space>
-                        <UserOutlined />
-                        <span>Usuários</span>
-                    </Space>
-                </TitleStyled>
-                <ActionButtons>
-                    <Button
-                        icon={<ReloadOutlined />}
-                        onClick={handleRefresh}
-                        loading={isRefreshing}
-                    >
-                        Atualizar
-                    </Button>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => navigate('/admin/usuarios/novo')}
-                    >
-                        Novo Usuário
-                    </Button>
-                </ActionButtons>
-            </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <HeroIcon>
+                            <FiUsers />
+                        </HeroIcon>
+                        <h1>
+                            Usuários
+                            {!isLoading && <HeroCount>{filtered.length}/{usuarios.length}</HeroCount>}
+                        </h1>
+                    </HeroLeft>
+                    <HeroActions>
+                        <GhostBtn type="button" onClick={handleRefresh} disabled={isRefreshing}>
+                            <RefreshCwIcon $spinning={isRefreshing} />
+                            Atualizar
+                        </GhostBtn>
+                        <PrimaryBtn type="button" onClick={() => navigate('/admin/usuarios/novo')}>
+                            <FiPlus /> Novo usuário
+                        </PrimaryBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-            <StyledCard>
-                <StyledTable
-                    columns={columns}
-                    dataSource={usuarios}
-                    rowKey="id"
-                    loading={isLoading}
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} usuários`,
-                    }}
-                    onRow={(record) => ({
-                        onClick: () => handleRowClick(record),
-                        style: { cursor: 'pointer' }
-                    })}
-                    locale={{
-                        emptyText: 'Nenhum usuário encontrado'
-                    }}
-                />
-            </StyledCard>
-        </PageContainer>
+            <Content>
+                <FiltersCard>
+                    <FiltersRow>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#6b86b8' }}>Perfil</span>
+                        <Select
+                            allowClear
+                            placeholder="Todos"
+                            value={filtroPerfil}
+                            onChange={setFiltroPerfil}
+                            style={{ width: 200 }}
+                            options={PERFIL_OPTIONS}
+                        />
+                    </FiltersRow>
+                </FiltersCard>
+
+                <SearchPanel>
+                    <SearchInput>
+                        <FiSearch />
+                        <input
+                            placeholder="Buscar por nome, e-mail ou crachá..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (setSearchTerm(searchInput.trim()), setPage(1))}
+                        />
+                        {searchInput && (
+                            <ClearBtn
+                                type="button"
+                                onClick={() => {
+                                    setSearchInput('');
+                                    setSearchTerm('');
+                                    setPage(1);
+                                }}
+                            >
+                                <FiX />
+                            </ClearBtn>
+                        )}
+                    </SearchInput>
+                    <SearchBtn
+                        type="button"
+                        onClick={() => {
+                            setSearchTerm(searchInput.trim());
+                            setPage(1);
+                        }}
+                    >
+                        <FiSearch /> Buscar
+                    </SearchBtn>
+                </SearchPanel>
+
+                <TableWrapper>
+                    {isLoading ? (
+                        <LoadingOverlay>
+                            <FiRefreshCw />
+                        </LoadingOverlay>
+                    ) : filtered.length === 0 ? (
+                        <EmptyState>
+                            <FiUsers style={{ width: 42, height: 42, opacity: 0.4 }} />
+                            <p>Nenhum usuário encontrado</p>
+                        </EmptyState>
+                    ) : (
+                        <>
+                            <THead>
+                                <TH>Usuário</TH>
+                                <TH>Perfil</TH>
+                                <TH>Crachá</TH>
+                                <TH style={{ textAlign: 'right' }}>Ações</TH>
+                            </THead>
+                            <div>
+                                {paginated.map((record) => (
+                                    <TRow key={record.id} onClick={() => navigate(`/admin/usuarios/detalhes/${record.id}`)}>
+                                        <TD>
+                                            <MobileLabel>Usuário</MobileLabel>
+                                            <UserCell>
+                                                <UserAvatar>{getInitials(record.nome)}</UserAvatar>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <UserName>{record.nome}</UserName>
+                                                    {record.email && (
+                                                        <UserEmail>
+                                                            <FiMail />
+                                                            {record.email}
+                                                        </UserEmail>
+                                                    )}
+                                                </div>
+                                            </UserCell>
+                                        </TD>
+                                        <TD>
+                                            <MobileLabel>Perfil</MobileLabel>
+                                            <PerfilPill $admin={record.perfil === 'ADMIN'}>{getProfileLabel(record.perfil)}</PerfilPill>
+                                        </TD>
+                                        <TD>
+                                            <MobileLabel>Crachá</MobileLabel>
+                                            <MutedCell>{record.cracha || '—'}</MutedCell>
+                                        </TD>
+                                        <TD>
+                                            <ActionsCell onClick={(e) => e.stopPropagation()}>
+                                                <ViewBtn
+                                                    type="button"
+                                                    title="Ver detalhes"
+                                                    onClick={() => navigate(`/admin/usuarios/detalhes/${record.id}`)}
+                                                >
+                                                    <FiEye />
+                                                </ViewBtn>
+                                                <ActionBtn
+                                                    type="button"
+                                                    title="Editar"
+                                                    onClick={() => navigate(`/admin/usuarios/editar/${record.id}`)}
+                                                >
+                                                    <FiEdit2 />
+                                                </ActionBtn>
+                                                <DeleteBtn type="button" title="Excluir" onClick={() => setDeleteTarget(record)}>
+                                                    <FiTrash2 />
+                                                </DeleteBtn>
+                                            </ActionsCell>
+                                        </TD>
+                                    </TRow>
+                                ))}
+                            </div>
+                            <Pagination>
+                                <PagInfo>
+                                    {startItem}–{endItem} de {filtered.length} usuários
+                                </PagInfo>
+                                <PagControls>
+                                    <PagBtn type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                                        <FiChevronLeft />
+                                    </PagBtn>
+                                    {pages.map((n) => (
+                                        <PagBtn key={n} type="button" $active={n === page} onClick={() => setPage(n)}>
+                                            {n}
+                                        </PagBtn>
+                                    ))}
+                                    <PagBtn
+                                        type="button"
+                                        disabled={page === totalPages || totalPages === 0}
+                                        onClick={() => setPage((p) => p + 1)}
+                                    >
+                                        <FiChevronRight />
+                                    </PagBtn>
+                                    <PerPageSelect
+                                        value={perPage}
+                                        onChange={(e) => {
+                                            setPerPage(Number(e.target.value));
+                                            setPage(1);
+                                        }}
+                                    >
+                                        <option value={10}>10 / pág</option>
+                                        <option value={20}>20 / pág</option>
+                                        <option value={50}>50 / pág</option>
+                                    </PerPageSelect>
+                                </PagControls>
+                            </Pagination>
+                        </>
+                    )}
+                </TableWrapper>
+            </Content>
+
+            {deleteTarget && (
+                <ConfirmOverlay onClick={() => setDeleteTarget(null)}>
+                    <ConfirmBox onClick={(e) => e.stopPropagation()}>
+                        <FiAlertCircle style={{ width: 40, height: 40, color: '#dc2626', marginBottom: 12 }} />
+                        <h3>Excluir usuário?</h3>
+                        <p>
+                            Confirma a exclusão de <strong>{deleteTarget.nome}</strong>?
+                        </p>
+                        <ConfirmActions>
+                            <CancelConfirmBtn type="button" onClick={() => setDeleteTarget(null)}>
+                                Cancelar
+                            </CancelConfirmBtn>
+                            <DeleteConfirmBtn type="button" onClick={handleDelete}>
+                                <FiTrash2 /> Excluir
+                            </DeleteConfirmBtn>
+                        </ConfirmActions>
+                    </ConfirmBox>
+                </ConfirmOverlay>
+            )}
+        </Page>
     );
 }
 
-export default UsuariosPage; 
+export default UsuariosPage;

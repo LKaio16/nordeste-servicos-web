@@ -11,7 +11,6 @@ import {
   FiArchive,
   FiTruck,
   FiLogOut,
-  FiMenu,
   FiChevronLeft,
   FiChevronRight,
   FiPackage,
@@ -20,25 +19,17 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.png';
 
-const NORDESTE = '#203d7b';
-const NORDESTE_LIGHT = 'rgba(32, 61, 123, 0.1)';
-
 const SidebarWrapper = styled.div`
   position: relative;
   z-index: 1000;
 `;
 
-const SANS_SERIF = "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-
 const SidebarContainer = styled.div`
-  font-family: ${SANS_SERIF} !important;
-  width: ${({ $collapsed }) => ($collapsed ? '80px' : '256px')};
-  background: linear-gradient(to bottom, #ffffff, rgba(248, 250, 252, 0.8));
-  border-right: 2px solid rgba(32, 61, 123, 0.2);
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  width: ${({ $collapsed }) => ($collapsed ? '78px' : '260px')};
+  background: #0a1e3d;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease, transform 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100vh;
   position: fixed;
   top: 0;
@@ -46,174 +37,174 @@ const SidebarContainer = styled.div`
   z-index: 1000;
   transform: ${({ $isOpen, $isMobile }) =>
     $isMobile ? ($isOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)'};
-
-  @media (max-width: 1023px) {
-    width: 256px;
-    box-shadow: ${({ $isOpen }) => ($isOpen ? '8px 0 30px rgba(0,0,0,0.15)' : 'none')};
-  }
-`;
-
-const Header = styled.div`
-  padding: ${({ $collapsed }) => ($collapsed ? '0.75rem' : '1.5rem')};
-  background: linear-gradient(135deg, #00529b 0%, #203d7b 100%);
-  border-bottom: none;
-  transition: padding 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 82, 155, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: ${({ $collapsed }) => ($collapsed ? '72px' : 'auto')};
-  box-sizing: border-box;
-`;
-
-const LogoWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-width: 0;
   overflow: hidden;
 
-  img {
-    height: ${({ $collapsed }) => ($collapsed ? '40px' : '64px')};
-    width: auto;
-    max-width: ${({ $collapsed }) => ($collapsed ? '100%' : 'none')};
-    object-fit: contain;
-    object-position: center;
-  }
-`;
-
-const ToggleSection = styled.div`
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-
   @media (max-width: 1023px) {
-    display: none;
+    width: 260px;
+    box-shadow: ${({ $isOpen }) => ($isOpen ? '8px 0 40px rgba(0, 0, 0, 0.3)' : 'none')};
   }
 `;
 
-const RecolherButton = styled.button`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+const LogoArea = styled.div`
+  padding: ${({ $collapsed }) => ($collapsed ? '20px 12px' : '24px 24px')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: ${({ $collapsed }) => ($collapsed ? '72px' : 'auto')};
+  transition: padding 0.3s;
+
+  img {
+    height: ${({ $collapsed }) => ($collapsed ? '36px' : '52px')};
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    opacity: 0.95;
+    transition: height 0.3s;
+  }
+`;
+
+const CollapseBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
-  width: 100%;
-  height: 32px;
-  padding: 0 0.75rem;
-  font-size: 0.75rem;
+  gap: 8px;
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  padding: 8px 12px;
+  font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.35);
   background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.5rem')};
-  }
-`;
-
-const NavContent = styled.nav`
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-`;
-
-const SectionGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const SectionTitle = styled.p`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.75rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${NORDESTE};
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-
-  &::before {
-    content: '';
-    width: 4px;
-    height: 2px;
-    background: ${NORDESTE};
-    border-radius: 2px;
-  }
-`;
-
-const NavItem = styled.button`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: ${({ $collapsed }) => ($collapsed ? '0.625rem 0.75rem' : '0.5rem 0.75rem')};
-  margin-bottom: 2px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: ${({ $active }) => ($active ? '#fff' : '#334155')};
-  background: ${({ $active }) => ($active ? NORDESTE : 'transparent')};
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  text-align: left;
   transition: all 0.2s;
-  position: relative;
-  box-shadow: ${({ $active }) => ($active ? `0 2px 8px ${NORDESTE}4D` : 'none')};
-  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
 
   &:hover {
-    background: ${({ $active }) => ($active ? NORDESTE : NORDESTE_LIGHT)};
-    color: ${({ $active }) => ($active ? '#fff' : NORDESTE)};
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  @media (max-width: 1023px) { display: none; }
+`;
+
+const NavScroll = styled.nav`
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 12px;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+`;
+
+const NavGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const GroupLabel = styled.p`
+  padding: 0 12px;
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.25);
+`;
+
+const NavItem = styled.button`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: ${({ $collapsed }) => ($collapsed ? '10px' : '9px 12px')};
+  margin-bottom: 2px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.4;
+  color: ${({ $active }) => ($active ? '#fff' : 'rgba(255, 255, 255, 0.55)')};
+  background: ${({ $active }) => ($active ? 'rgba(255, 255, 255, 0.1)' : 'transparent')};
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  position: relative;
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
+
+  ${({ $active }) => $active && `
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 20px;
+      border-radius: 0 3px 3px 0;
+      background: #4d9fff;
+    }
+  `}
+
+  &:hover {
+    color: #fff;
+    background: ${({ $active }) => ($active ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)')};
   }
 
   svg {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
     flex-shrink: 0;
-    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.75rem')};
+    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '12px')};
+    opacity: ${({ $active }) => ($active ? '1' : '0.7')};
+    transition: opacity 0.15s;
   }
 
+  &:hover svg { opacity: 1; }
+
   span {
-    font-family: inherit !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 `;
 
-const Tooltip = styled.span`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+const NavTooltip = styled.span`
   position: absolute;
-  left: calc(100% + 8px);
+  left: calc(100% + 12px);
   top: 50%;
   transform: translateY(-50%);
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: white;
-  background: #0f172a;
-  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #1a4494;
+  border-radius: 8px;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   z-index: 50;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition: opacity 0.15s, visibility 0.15s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 8px;
+    height: 8px;
+    background: #1a4494;
+  }
 
   ${NavItem}:hover & {
     opacity: 1;
@@ -221,52 +212,50 @@ const Tooltip = styled.span`
   }
 `;
 
-const Footer = styled.div`
-  padding: ${({ $collapsed }) => ($collapsed ? '0.75rem' : '1rem')};
-  border-top: 2px solid rgba(32, 61, 123, 0.3);
-  background: linear-gradient(to top, rgba(32, 61, 123, 0.05), transparent);
-  transition: padding 0.3s ease;
+const FooterArea = styled.div`
+  padding: ${({ $collapsed }) => ($collapsed ? '12px' : '16px')};
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  transition: padding 0.3s;
 `;
 
 const UserCard = styled(Link)`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
-  border-radius: 8px;
-  background: white;
-  border: 2px solid rgba(32, 61, 123, 0.2);
-  box-shadow: 0 2px 8px rgba(32, 61, 123, 0.1);
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition: all 0.2s;
 
   &:hover {
-    box-shadow: 0 2px 12px rgba(32, 61, 123, 0.15);
-    border-color: rgba(32, 61, 123, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 `;
 
-const UserAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${NORDESTE}, #2d5aa0);
+const Avatar = styled.div`
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1a4494, #2b6fc2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(32, 61, 123, 0.2);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 10px;
   }
 `;
 
@@ -277,53 +266,47 @@ const UserInfo = styled.div`
 `;
 
 const UserName = styled.p`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #0f172a;
   margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const UserEmail = styled.p`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  font-size: 0.75rem;
-  color: #64748b;
-  margin: 0.125rem 0 0 0;
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
-const LogoutButton = styled.button`
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+const LogoutBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
+  gap: 8px;
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 9px 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.4);
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   transition: all 0.2s;
 
   &:hover {
-    background: #fef2f2;
-    color: #dc2626;
+    background: rgba(220, 38, 38, 0.12);
+    color: #f87171;
   }
 
-  svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '0.5rem')};
-  }
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
 `;
 
 const navGroups = [
@@ -390,9 +373,7 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
     if (isMobile && isOpen) setIsOpen(false);
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleNav = (path) => {
-    navigate(path);
-  };
+  const handleNav = (path) => navigate(path);
 
   const handleLogout = () => {
     logout();
@@ -402,37 +383,25 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
 
+  const imgSrc = getImageSrc(user?.fotoUrl || user?.fotoPerfil);
+
   return (
     <SidebarWrapper>
       <SidebarContainer $isOpen={isOpen} $isMobile={isMobile} $collapsed={collapsed}>
-        <Header $collapsed={collapsed}>
-          <LogoWrapper $collapsed={collapsed}>
-            <img src={logo} alt="Nordeste Serviços" />
-          </LogoWrapper>
-        </Header>
+        <LogoArea $collapsed={collapsed}>
+          <img src={logo} alt="Nordeste Serviços" />
+        </LogoArea>
 
         {!isMobile && (
-          <ToggleSection>
-            <RecolherButton
-              $collapsed={collapsed}
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              {collapsed ? (
-                <FiChevronRight />
-              ) : (
-                <>
-                  <FiChevronLeft />
-                  Recolher
-                </>
-              )}
-            </RecolherButton>
-          </ToggleSection>
+          <CollapseBtn $collapsed={collapsed} onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? <FiChevronRight /> : <><FiChevronLeft /> Recolher</>}
+          </CollapseBtn>
         )}
 
-        <NavContent>
+        <NavScroll>
           {navGroups.map((group) => (
-            <SectionGroup key={group.title}>
-              {!collapsed && <SectionTitle>{group.title}</SectionTitle>}
+            <NavGroup key={group.title}>
+              {!collapsed && <GroupLabel>{group.title}</GroupLabel>}
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -446,57 +415,56 @@ function Sidebar({ isOpen, setIsOpen, collapsed, setCollapsed }) {
                   >
                     <Icon />
                     {!collapsed && <span>{item.text}</span>}
-                    {collapsed && <Tooltip>{item.text}</Tooltip>}
+                    {collapsed && <NavTooltip>{item.text}</NavTooltip>}
                   </NavItem>
                 );
               })}
-            </SectionGroup>
+            </NavGroup>
           ))}
-        </NavContent>
+        </NavScroll>
 
-        <Footer $collapsed={collapsed}>
-          {user && (
-            <>
-              <UserCard to="/admin/perfil" style={{ display: collapsed ? 'none' : 'flex' }}>
-                <UserAvatar>
-                  {getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? (
-                    <img
-                      src={getImageSrc(user.fotoUrl || user.fotoPerfil)}
-                      alt={user.nome}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        const fallback = e.target.nextElementSibling;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <span style={{ display: getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? 'none' : 'flex' }}>
-                    {user?.nome?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </UserAvatar>
-                <UserInfo>
-                  <UserName>{user?.nome || 'Usuário'}</UserName>
-                  <UserEmail>{user?.email || ''}</UserEmail>
-                </UserInfo>
-              </UserCard>
-              {collapsed && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
-                  <UserAvatar>
-                    {getImageSrc(user?.fotoUrl || user?.fotoPerfil) ? (
-                      <img src={getImageSrc(user.fotoUrl || user.fotoPerfil)} alt="" />
-                    ) : (
-                      <span>{user?.nome?.charAt(0)?.toUpperCase() || 'U'}</span>
-                    )}
-                  </UserAvatar>
-                </div>
-              )}
-            </>
+        <FooterArea $collapsed={collapsed}>
+          {user && !collapsed && (
+            <UserCard to="/admin/perfil">
+              <Avatar>
+                {imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt={user.nome}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <span style={{ display: imgSrc ? 'none' : 'flex' }}>
+                  {user?.nome?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </Avatar>
+              <UserInfo>
+                <UserName>{user?.nome || 'Usuário'}</UserName>
+                <UserEmail>{user?.email || ''}</UserEmail>
+              </UserInfo>
+            </UserCard>
           )}
-          <LogoutButton $collapsed={collapsed} onClick={handleLogout} title={collapsed ? 'Sair' : undefined}>
+
+          {user && collapsed && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+              <Avatar>
+                {imgSrc ? (
+                  <img src={imgSrc} alt="" />
+                ) : (
+                  <span>{user?.nome?.charAt(0)?.toUpperCase() || 'U'}</span>
+                )}
+              </Avatar>
+            </div>
+          )}
+
+          <LogoutBtn $collapsed={collapsed} onClick={handleLogout} title={collapsed ? 'Sair' : undefined}>
             <FiLogOut />
             {!collapsed && <span>Sair</span>}
-          </LogoutButton>
-        </Footer>
+          </LogoutBtn>
+        </FooterArea>
       </SidebarContainer>
     </SidebarWrapper>
   );

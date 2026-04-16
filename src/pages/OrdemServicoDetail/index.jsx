@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import {
-    ArrowLeftOutlined,
-    DownloadOutlined,
     EditOutlined,
     DeleteOutlined,
     UserOutlined,
@@ -14,7 +12,6 @@ import {
     FileTextOutlined,
     CameraOutlined,
     EditFilled,
-    PlusOutlined,
     UploadOutlined
 } from '@ant-design/icons';
 import * as osService from '../../services/osService';
@@ -27,8 +24,6 @@ import {
     Spin,
     Row,
     Col,
-    Divider,
-    Tag,
     Popconfirm,
     Modal,
     DatePicker,
@@ -38,126 +33,216 @@ import {
     Descriptions,
     Statistic
 } from 'antd';
-import styled from 'styled-components';
-import { getStatusLabel, getPrioridadeLabel } from '../../utils/enumLabels';
+import styled, { keyframes } from 'styled-components';
+import { FiArrowLeft, FiEdit2, FiTrash2, FiDownload } from 'react-icons/fi';
 
 const { Title, Text } = Typography;
 
-// Styled Components
-const PageContainer = styled.div`
-    padding: 0 24px 24px 24px;
-    background-color: #f5f5f5;
-    min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
 `;
 
-const StyledCard = styled(Card)`
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: none;
-    margin-bottom: 24px;
-    
-    .ant-card-body {
-        padding: 32px;
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
+`;
+
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 32px 36px 72px;
+    position: relative;
+    overflow: hidden;
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    &::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
     }
-    
-    .ant-card-head {
-        border-bottom: 2px solid #f0f0f0;
-        
-        .ant-card-head-title {
-            color: #00529b;
-            font-weight: 700;
-            font-size: 18px;
-        }
+    @media (max-width: 768px) {
+        margin: -16px -16px 0;
+        padding: 24px 20px 64px;
     }
 `;
 
-const HeaderContainer = styled.div`
+const HeroInner = styled.div`
+    position: relative;
+    z-index: 1;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #f0f0f0;
+    flex-wrap: wrap;
+    gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 `;
 
-const TitleContainer = styled.div`
+const HeroLeft = styled.div`
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 `;
 
-const TitleStyled = styled(Title)`
-    color: #00529b !important;
-    margin: 0 !important;
-    font-size: 28px !important;
-    font-weight: 700 !important;
-`;
-
-const ActionButtons = styled(Space)`
-    .ant-btn {
-        height: 40px;
-        padding: 0 20px;
-        border-radius: 8px;
-  font-weight: 600;
-        transition: all 0.3s ease;
-        
-        &.ant-btn-primary {
-            background: linear-gradient(135deg, #00529b 0%, #0066cc 100%);
-            border: none;
-            box-shadow: 0 2px 8px rgba(0, 82, 155, 0.3);
-            
-            &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 82, 155, 0.4);
-            }
-        }
-        
-        &.ant-btn-default {
-            border: 2px solid #d9d9d9;
-            color: #666;
-            
-            &:hover {
-                border-color: #00529b;
-                color: #00529b;
-            }
-        }
-        
-        &.ant-btn-dangerous {
-            border: 2px solid #ff4d4f;
-            color: #ff4d4f;
-            
-            &:hover {
-                background-color: #ff4d4f;
-                color: white;
-            }
-        }
-    }
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
+const BackBtn = styled.button`
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    
-    .ant-spin {
-        margin-bottom: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
-    
-    .loading-text {
-        color: #00529b;
-        font-size: 18px;
-        font-weight: 600;
+    svg {
+        width: 18px;
+        height: 18px;
     }
 `;
 
-const StatusTag = styled(Tag)`
-    border-radius: 20px;
-    padding: 4px 12px;
-  font-weight: 500;
+const HeroInfo = styled.div`
+    h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+    }
+    p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.65);
+    }
+`;
+
+const HeroActions = styled.div`
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+`;
+
+const Btn = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
     border: none;
-    font-size: 12px;
+    white-space: nowrap;
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+`;
+
+const PrimaryBtn = styled(Btn)`
+    background: #fff;
+    color: #1a4494;
+    &:hover {
+        background: #f0f7ff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
+`;
+
+const GhostBtn = styled(Btn)`
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+`;
+
+const DangerGhostBtn = styled(Btn)`
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    &:hover {
+        background: rgba(220, 38, 38, 0.25);
+        color: #fff;
+    }
+`;
+
+const Content = styled.div`
+    margin-top: -44px;
+    position: relative;
+    z-index: 2;
+`;
+
+const Section = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(12, 45, 107, 0.06);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    margin-bottom: 18px;
+    overflow: hidden;
+    animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: ${(p) => p.$d || '0.15s'};
+`;
+
+const SectionHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef2f9;
+    svg {
+        width: 18px;
+        height: 18px;
+        color: #1a4494;
+    }
+    h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0c2d6b;
+    }
+`;
+
+const SectionHeaderRow = styled(SectionHeader)`
+    justify-content: space-between;
+    flex-wrap: wrap;
+`;
+
+const SectionBody = styled.div`
+    padding: 24px;
+`;
+
+const LoadWrap = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    gap: 16px;
+    flex-direction: column;
+    .ant-spin-dot-item {
+        background-color: #1a4494 !important;
+    }
 `;
 
 const ImageGallery = styled.div`
@@ -218,7 +303,7 @@ const SignatureContainer = styled.div`
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #00529b;
+            color: #0c2d6b;
         }
         
         .ant-image {
@@ -233,23 +318,23 @@ const SignatureContainer = styled.div`
 const StatisticCard = styled(Card)`
     text-align: center;
     border-radius: 12px;
-    border: 2px solid #f0f0f0;
+    border: 1px solid #eef2f9;
     transition: all 0.3s ease;
-    
+
     &:hover {
-        border-color: #00529b;
+        border-color: #1a4494;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 82, 155, 0.1);
+        box-shadow: 0 4px 12px rgba(26, 68, 148, 0.1);
     }
-    
+
     .ant-statistic-title {
-        color: #00529b;
+        color: #1a4494;
         font-weight: 600;
         font-size: 14px;
     }
-    
+
     .ant-statistic-content {
-        color: #333;
+        color: #0c2d6b;
         font-weight: 700;
     }
 `;
@@ -512,60 +597,73 @@ function OrdemServicoDetailPage() {
 
     if (isLoading) {
         return (
-            <PageContainer>
-                <LoadingContainer>
-                    <Spin size="large" />
-                    <div className="loading-text">Carregando detalhes da OS...</div>
-                </LoadingContainer>
-            </PageContainer>
+            <Page>
+                <Hero>
+                    <HeroInner>
+                        <HeroInfo>
+                            <h1>Ordem de Serviço</h1>
+                        </HeroInfo>
+                    </HeroInner>
+                </Hero>
+                <Content>
+                    <LoadWrap>
+                        <Spin size="large" />
+                        <span style={{ color: '#6b86b8', fontWeight: 600 }}>Carregando detalhes da OS...</span>
+                    </LoadWrap>
+                </Content>
+            </Page>
         );
     }
 
     if (!os) {
         return (
-            <PageContainer>
-                <StyledCard>
-                    <div style={{ textAlign: 'center', padding: '40px' }}>
-                        <ExclamationCircleOutlined style={{ fontSize: '48px', color: '#ff4d4f', marginBottom: '16px' }} />
-                        <Title level={3} style={{ color: '#ff4d4f' }}>Ordem de Serviço não encontrada</Title>
-                        <Text>Verifique se o ID da OS está correto.</Text>
-                    </div>
-                </StyledCard>
-            </PageContainer>
+            <Page>
+                <Hero>
+                    <HeroInner>
+                        <HeroInfo>
+                            <h1>OS não encontrada</h1>
+                            <p>Verifique o ID informado</p>
+                        </HeroInfo>
+                    </HeroInner>
+                </Hero>
+                <Content>
+                    <Section $d="0.1s">
+                        <SectionBody style={{ textAlign: 'center' }}>
+                            <ExclamationCircleOutlined style={{ fontSize: 48, color: '#dc2626', marginBottom: 16 }} />
+                            <Title level={3} style={{ color: '#dc2626', margin: 0 }}>
+                                Ordem de Serviço não encontrada
+                            </Title>
+                            <Text>Verifique se o ID da OS está correto.</Text>
+                        </SectionBody>
+                    </Section>
+                </Content>
+            </Page>
         );
     }
 
     return (
-        <PageContainer>
-            <StyledCard>
-                <HeaderContainer>
-                    <TitleContainer>
-                        <Button
-                            type="text"
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate(-1)}
-                            style={{ fontSize: '18px', color: '#00529b' }}
-                        />
-                        <TitleStyled level={2}>
-                            <Space>
-                                <FileTextOutlined />
-                                <span>Detalhes da OS #{id}</span>
-                            </Space>
-                        </TitleStyled>
-                    </TitleContainer>
-                    <ActionButtons>
-                        <Button
-                            icon={<DownloadOutlined />}
-                            onClick={handleDownloadPdf}
-                        >
-                            Baixar PDF
-                        </Button>
-                        <Button
-                            icon={<EditOutlined />}
-                            onClick={() => navigate(`/admin/os/editar/${id}`)}
-                        >
-                            Editar
-                        </Button>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <BackBtn onClick={() => navigate(-1)}>
+                            <FiArrowLeft />
+                        </BackBtn>
+                        <HeroInfo>
+                            <h1>OS #{id}</h1>
+                            <p>
+                                {extractValue(os.status)}
+                                {os.cliente?.nomeCompleto ? ` · ${os.cliente.nomeCompleto}` : ''}
+                            </p>
+                        </HeroInfo>
+                    </HeroLeft>
+                    <HeroActions>
+                        <GhostBtn type="button" onClick={handleDownloadPdf}>
+                            <FiDownload /> PDF
+                        </GhostBtn>
+                        <PrimaryBtn type="button" onClick={() => navigate(`/admin/os/editar/${id}`)}>
+                            <FiEdit2 /> Editar
+                        </PrimaryBtn>
                         <Popconfirm
                             title="Excluir Ordem de Serviço"
                             description={`Deseja realmente excluir a OS #${id}?`}
@@ -574,22 +672,21 @@ function OrdemServicoDetailPage() {
                             cancelText="Não"
                             okType="danger"
                         >
-                            <Button
-                                danger
-                                icon={<DeleteOutlined />}
-                            >
-                                Excluir
-                            </Button>
+                            <DangerGhostBtn type="button">
+                                <FiTrash2 /> Excluir
+                            </DangerGhostBtn>
                         </Popconfirm>
-                    </ActionButtons>
-                </HeaderContainer>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-                <StyledCard title={
-                    <Space>
+            <Content>
+                <Section $d="0.1s">
+                    <SectionHeader>
                         <CheckCircleOutlined />
-                        <span>Status e Prazos</span>
-                    </Space>
-                }>
+                        <h3>Status e prazos</h3>
+                    </SectionHeader>
+                    <SectionBody>
                     <Row gutter={[24, 16]}>
                         <Col xs={24} md={8}>
                             <StatisticCard>
@@ -599,7 +696,7 @@ function OrdemServicoDetailPage() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         marginBottom: '8px',
-                                        color: '#00529b',
+                                        color: '#1a4494',
                                         fontSize: '14px',
                                         fontWeight: '600'
                                     }}>
@@ -632,7 +729,7 @@ function OrdemServicoDetailPage() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         marginBottom: '8px',
-                                        color: '#00529b',
+                                        color: '#1a4494',
                                         fontSize: '14px',
                                         fontWeight: '600'
                                     }}>
@@ -666,7 +763,7 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={formatDate(os.dataAbertura)}
-                                    valueStyle={{ color: '#00529b', fontSize: '16px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '16px' }}
                                 />
                             </StatisticCard>
                         </Col>
@@ -680,7 +777,7 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={formatDate(os.dataAgendamento)}
-                                    valueStyle={{ color: '#00529b', fontSize: '16px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '16px' }}
                                 />
                             </StatisticCard>
                         </Col>
@@ -694,19 +791,20 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={formatDate(os.dataFechamento)}
-                                    valueStyle={{ color: '#00529b', fontSize: '16px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '16px' }}
                                 />
                             </StatisticCard>
                         </Col>
                     </Row>
-                </StyledCard>
+                    </SectionBody>
+                </Section>
 
-                <StyledCard title={
-                    <Space>
+                <Section $d="0.18s">
+                    <SectionHeader>
                         <UserOutlined />
-                        <span>Envolvidos</span>
-                    </Space>
-                }>
+                        <h3>Envolvidos</h3>
+                    </SectionHeader>
+                    <SectionBody>
                     <Row gutter={[24, 16]}>
                         <Col xs={24} md={8}>
                             <StatisticCard>
@@ -718,7 +816,7 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={os.cliente?.nomeCompleto || 'N/A'}
-                                    valueStyle={{ color: '#00529b', fontSize: '18px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '18px' }}
                                 />
                             </StatisticCard>
                         </Col>
@@ -732,7 +830,7 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={os.equipamento ? `${os.equipamento.marcaModelo} (S/N: ${os.equipamento.numeroSerieChassi})` : 'N/A'}
-                                    valueStyle={{ color: '#00529b', fontSize: '16px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '16px' }}
                                 />
                             </StatisticCard>
                         </Col>
@@ -746,19 +844,20 @@ function OrdemServicoDetailPage() {
                                         </Space>
                                     }
                                     value={os.tecnicoAtribuido?.nome || 'Não atribuído'}
-                                    valueStyle={{ color: '#00529b', fontSize: '18px' }}
+                                    valueStyle={{ color: '#1a4494', fontSize: '18px' }}
                                 />
                             </StatisticCard>
                         </Col>
                     </Row>
-                </StyledCard>
+                    </SectionBody>
+                </Section>
 
-                <StyledCard title={
-                    <Space>
+                <Section $d="0.22s">
+                    <SectionHeader>
                         <FileTextOutlined />
-                        <span>Descrição do Serviço</span>
-                    </Space>
-                }>
+                        <h3>Descrição do serviço</h3>
+                    </SectionHeader>
+                    <SectionBody>
                     <Row gutter={[24, 16]}>
                         <Col xs={24}>
                             <Descriptions column={1} size="large">
@@ -795,14 +894,15 @@ function OrdemServicoDetailPage() {
                             </Descriptions>
                         </Col>
                     </Row>
-                </StyledCard>
+                    </SectionBody>
+                </Section>
 
-                <StyledCard title={
-                    <Space>
+                <Section $d="0.26s">
+                    <SectionHeader>
                         <CalendarOutlined />
-                        <span>Registro de Tempo</span>
-                    </Space>
-                }>
+                        <h3>Registro de tempo</h3>
+                    </SectionHeader>
+                    <SectionBody>
                     {isLoadingRegistrosTempo ? (
                         <div style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
                             Carregando registros de tempo...
@@ -869,15 +969,16 @@ function OrdemServicoDetailPage() {
                             Nenhum registro de tempo para esta OS.
                         </div>
                     )}
-                </StyledCard>
+                    </SectionBody>
+                </Section>
 
-                <StyledCard title={
-                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                        <Space>
-                            <CameraOutlined />
-                            <span>Fotos ({fotos?.length || 0})</span>
-                        </Space>
-                        <Space>
+                <Section $d="0.3s">
+                    <SectionHeaderRow>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <CameraOutlined style={{ fontSize: 18, color: '#1a4494' }} />
+                            <h3 style={{ margin: 0 }}>Fotos ({fotos?.length || 0})</h3>
+                        </div>
+                        <div>
                             <input
                                 key={uploadInputKey}
                                 type="file"
@@ -892,12 +993,13 @@ function OrdemServicoDetailPage() {
                                 icon={<UploadOutlined />}
                                 loading={uploadingFoto}
                                 onClick={() => document.getElementById('upload-foto-os')?.click()}
+                                style={{ borderRadius: 10 }}
                             >
                                 Enviar fotos
                             </Button>
-                        </Space>
-                    </Space>
-                }>
+                        </div>
+                    </SectionHeaderRow>
+                    <SectionBody>
                     {fotos && fotos.length > 0 ? (
                         <ImageGallery>
                             {fotos.map((foto) => {
@@ -941,15 +1043,16 @@ function OrdemServicoDetailPage() {
                             <p>Nenhuma foto ainda. Clique em &quot;Enviar fotos&quot; para adicionar.</p>
                         </div>
                     )}
-                </StyledCard>
+                    </SectionBody>
+                </Section>
 
                 {assinatura && (
-                    <StyledCard title={
-                        <Space>
+                    <Section $d="0.34s">
+                        <SectionHeader>
                             <EditFilled />
-                            <span>Assinaturas</span>
-                        </Space>
-                    }>
+                            <h3>Assinaturas</h3>
+                        </SectionHeader>
+                        <SectionBody>
                         <SignatureContainer>
                             {assinatura.assinaturaClienteBase64 && (
                                 <div className="signature-item">
@@ -980,30 +1083,31 @@ function OrdemServicoDetailPage() {
                                 </div>
                             )}
                         </SignatureContainer>
-                    </StyledCard>
+                        </SectionBody>
+                    </Section>
                 )}
 
-                <Modal
-                    title="Editar registro de tempo"
-                    open={editTempoModalOpen}
-                    onCancel={() => setEditTempoModalOpen(false)}
-                    onOk={handleSalvarEdicaoTempo}
-                    okText="Salvar"
-                >
-                    <div style={{ marginBottom: 12, color: '#555' }}>
-                        Ajuste a <strong>hora de término</strong> para recalcular as horas trabalhadas.
-                    </div>
-                    <DatePicker
-                        style={{ width: '100%' }}
-                        showTime={{ format: 'HH:mm' }}
-                        format="YYYY-MM-DD HH:mm"
-                        value={tempoEditHoraTermino}
-                        onChange={(v) => setTempoEditHoraTermino(v)}
-                    />
-                </Modal>
+            </Content>
 
-            </StyledCard>
-        </PageContainer>
+            <Modal
+                title="Editar registro de tempo"
+                open={editTempoModalOpen}
+                onCancel={() => setEditTempoModalOpen(false)}
+                onOk={handleSalvarEdicaoTempo}
+                okText="Salvar"
+            >
+                <div style={{ marginBottom: 12, color: '#555' }}>
+                    Ajuste a <strong>hora de término</strong> para recalcular as horas trabalhadas.
+                </div>
+                <DatePicker
+                    style={{ width: '100%' }}
+                    showTime={{ format: 'HH:mm' }}
+                    format="YYYY-MM-DD HH:mm"
+                    value={tempoEditHoraTermino}
+                    onChange={(v) => setTempoEditHoraTermino(v)}
+                />
+            </Modal>
+        </Page>
     );
 }
 

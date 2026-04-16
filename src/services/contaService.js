@@ -10,6 +10,16 @@ export const getAllContas = async (clienteId, fornecedorId, tipo, status) => {
   return response.data;
 };
 
+export const getContasPage = async ({ clienteId, fornecedorId, tipo, status, page = 0, size = 20 } = {}) => {
+  const params = { page, size };
+  if (clienteId) params.clienteId = clienteId;
+  if (fornecedorId) params.fornecedorId = fornecedorId;
+  if (tipo) params.tipo = tipo;
+  if (status) params.status = status;
+  const response = await api.get('/api/contas/paged', { params });
+  return response.data;
+};
+
 export const getContaById = async (id) => {
   const response = await api.get(`/api/contas/${id}`);
   return response.data;

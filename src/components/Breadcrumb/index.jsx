@@ -1,30 +1,47 @@
 import { Breadcrumb as AntBreadcrumb } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { FiHome, FiChevronRight } from 'react-icons/fi';
 
 const StyledBreadcrumb = styled(AntBreadcrumb)`
-  margin-bottom: 16px;
-  margin-left: 24px;
-  margin-right: 24px;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  
-  .ant-breadcrumb-link {
-    color: #666;
-    font-weight: 500;
-    
-    &:hover {
-      color: #00529b;
+  && {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-size: 13px;
+    line-height: 1;
+
+    .ant-breadcrumb-link {
+      color: #6b86b8;
+      font-weight: 500;
+
+      a {
+        color: #6b86b8;
+        text-decoration: none;
+        transition: color 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        &:hover { color: #1a4494; }
+      }
+    }
+
+    .ant-breadcrumb-separator {
+      color: #c7d4e8;
+      margin: 0 6px;
+      display: inline-flex;
+      align-items: center;
     }
   }
-  
-  .ant-breadcrumb-separator {
-    color: #999;
-  }
+`;
+
+const ActiveItem = styled.span`
+  color: #0c2d6b;
+  font-weight: 700;
+  font-size: 13px;
 `;
 
 const Breadcrumb = () => {
@@ -47,28 +64,21 @@ const Breadcrumb = () => {
             'novo': 'Novo',
             'editar': 'Editar',
             'detalhes': 'Detalhes',
-            'criar': 'Criar'
+            'criar': 'Criar',
+            'recibos': 'Recibos',
+            'fornecedores': 'Fornecedores',
+            'contas': 'Contas',
+            'notas-fiscais': 'Notas Fiscais',
         };
 
-        // Se for um ID (número), mostrar como "ID" ou o contexto apropriado
         if (/^\d+$/.test(pathname)) {
-            const previousPath = allPathnames[index - 1];
-            if (previousPath === 'ordens-servico' || previousPath === 'os') {
-                return `OS ${pathname}`;
-            } else if (previousPath === 'orcamentos') {
-                return `Orçamento ${pathname}`;
-            } else if (previousPath === 'clientes') {
-                return `Cliente ${pathname}`;
-            } else if (previousPath === 'equipamentos') {
-                return `Equipamento ${pathname}`;
-            } else if (previousPath === 'servicos') {
-                return `Serviço ${pathname}`;
-            } else if (previousPath === 'pecas') {
-                return `Peça ${pathname}`;
-            } else if (previousPath === 'usuarios') {
-                return `Usuário ${pathname}`;
-            }
-            return `ID ${pathname}`;
+            const prev = allPathnames[index - 1];
+            const labels = {
+                'ordens-servico': 'OS', 'os': 'OS', 'orcamentos': 'Orçamento',
+                'clientes': 'Cliente', 'equipamentos': 'Equipamento',
+                'servicos': 'Serviço', 'pecas': 'Peça', 'usuarios': 'Usuário',
+            };
+            return `${labels[prev] || 'ID'} ${pathname}`;
         }
 
         return pathMap[pathname] || pathname.charAt(0).toUpperCase() + pathname.slice(1);
@@ -79,40 +89,29 @@ const Breadcrumb = () => {
             {
                 title: (
                     <Link to="/admin/dashboard">
-                        <HomeOutlined />
-                        <span style={{ marginLeft: 4 }}>Início</span>
+                        <FiHome style={{ width: 13, height: 13 }} />
+                        <span>Início</span>
                     </Link>
                 )
             }
         ];
 
-        // Construir o path corretamente, começando com /admin
         let currentPath = '/admin';
 
         pathnames.forEach((pathname, index) => {
-            // Pular 'admin' e 'dashboard' para evitar duplicação
-            if (pathname === 'admin' || pathname === 'dashboard') {
-                return;
-            }
+            if (pathname === 'admin' || pathname === 'dashboard') return;
 
             currentPath += `/${pathname}`;
             const name = getBreadcrumbName(pathname, index, pathnames);
 
             if (name) {
                 const isLast = index === pathnames.length - 1;
-                const isActionPage = pathname === 'detalhes' || pathname === 'editar' || pathname === 'novo' || pathname === 'criar';
+                const isAction = ['detalhes', 'editar', 'novo', 'criar'].includes(pathname);
 
-                // Se for a última página OU for uma página de ação (detalhes, editar, etc.), não tornar clicável
-                if (isLast || isActionPage) {
-                    items.push({
-                        title: (
-                            <span style={{ color: '#00529b', fontWeight: 600 }}>{name}</span>
-                        )
-                    });
+                if (isLast || isAction) {
+                    items.push({ title: <ActiveItem>{name}</ActiveItem> });
                 } else {
-                    items.push({
-                        title: <Link to={currentPath}>{name}</Link>
-                    });
+                    items.push({ title: <Link to={currentPath}>{name}</Link> });
                 }
             }
         });
@@ -120,12 +119,16 @@ const Breadcrumb = () => {
         return items;
     };
 
-    // Não mostrar breadcrumb na página inicial
     if (location.pathname === '/admin/dashboard' || location.pathname === '/admin') {
         return null;
     }
 
-    return <StyledBreadcrumb items={getBreadcrumbItems()} />;
+    return (
+        <StyledBreadcrumb
+            items={getBreadcrumbItems()}
+            separator={<FiChevronRight style={{ width: 12, height: 12 }} />}
+        />
+    );
 };
 
 export default Breadcrumb;

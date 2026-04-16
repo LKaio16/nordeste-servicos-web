@@ -1,19 +1,36 @@
 import api from './api';
 
-export const getAllOrdensServico = async (searchTerm = '', page = 0, size = 20) => {
+export const getAllOrdensServico = async (searchTerm = '', page = 0, size = 20, extraParams = {}) => {
     try {
         // Usa o endpoint e o parâmetro de busca definidos na API
         const response = await api.get('/api/ordens-servico', {
             params: { 
                 searchTerm: searchTerm || null,
                 page: page,
-                size: size
+                size: size,
+                ...extraParams
             },
         });
         return response.data;
     } catch (error) {
         console.error("Erro ao buscar Ordens de Serviço:", error.response?.data || error.message);
         throw error.response?.data || new Error("Não foi possível carregar as Ordens de Serviço.");
+    }
+};
+
+export const getOrdensServicoPage = async (searchTerm = '', page = 0, size = 20) => {
+    try {
+        const response = await api.get('/api/ordens-servico/paged', {
+            params: {
+                searchTerm: searchTerm || null,
+                page,
+                size
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar página de Ordens de Serviço:", error.response?.data || error.message);
+        throw error.response?.data || new Error("Não foi possível carregar a listagem paginada de Ordens de Serviço.");
     }
 };
 

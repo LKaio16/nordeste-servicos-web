@@ -1,206 +1,317 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import {
-    ArrowLeftOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    UserOutlined,
-    IdcardOutlined,
-    MailOutlined,
-    TeamOutlined,
-    InfoCircleOutlined
-} from '@ant-design/icons';
+import styled, { keyframes } from 'styled-components';
+import { FiArrowLeft, FiEdit2, FiTrash2, FiUser, FiMail, FiCreditCard, FiUsers, FiAlertCircle } from 'react-icons/fi';
 import * as usuarioService from '../../services/usuarioService';
-import {
-    Card,
-    Button,
-    Typography,
-    Space,
-    message,
-    Spin,
-    Row,
-    Col,
-    Tag,
-    Popconfirm,
-    Avatar
-} from 'antd';
+import { message, Spin, Avatar } from 'antd';
 
-// Styled Components
-const PageContainer = styled.div`
-  padding: 0 24px 24px 24px;
-  background: #f8f9fa;
-  min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
 `;
 
-const StyledCard = styled(Card)`
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
-  border: none;
-  overflow: hidden;
-  margin-bottom: 24px;
-  
-  .ant-card-head {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
-    border-bottom: none;
-    
-    .ant-card-head-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
+`;
+
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 32px 36px 72px;
+    position: relative;
+    overflow: hidden;
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    &::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
     }
-  }
-  
-  .ant-card-body {
-    padding: 0 24px 24px 24px;
-  }
+    @media (max-width: 768px) {
+        margin: -16px -16px 0;
+        padding: 24px 20px 64px;
+    }
 `;
 
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  color: #333;
+const HeroInner = styled.div`
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 `;
 
-const TitleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
+const HeroLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
 `;
 
-const TitleStyled = styled(Typography.Title)`
-  color: #00529b !important;
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 28px !important;
-`;
-
-const ActionButtons = styled(Space)`
-  .ant-btn {
-    border-radius: 8px;
-    font-weight: 500;
+const BackBtn = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
     height: 40px;
-    padding: 0 20px;
-    
-    &.ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-      border: none;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-      
-      &:hover {
-        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
-      }
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
-    
-    &.ant-btn-default {
-      background: white;
-      border: 1px solid #d9d9d9;
-      color: #333;
-      
-      &:hover {
-        background: #f5f5f5;
-        border-color: #00529b;
-        color: #00529b;
-      }
+    svg {
+        width: 18px;
+        height: 18px;
     }
-    
-    &.ant-btn-dangerous {
-      border-color: #ff4d4f;
-      color: #ff4d4f;
-      
-      &:hover {
-        background: #ff4d4f;
-        border-color: #ff4d4f;
-        color: white;
-      }
-    }
-  }
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  gap: 16px;
-  
-  .ant-spin {
-    .ant-spin-text {
-      font-size: 18px;
-      color: #00529b;
-      font-weight: 500;
+const HeroInfo = styled.div`
+    h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
     }
-  }
+    p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.65);
+    }
 `;
 
-const SectionTitle = styled.div`
-  font-size: 18px;
-  font-weight: 600;
-  color: #00529b;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #e8e8e8;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+const HeroActions = styled.div`
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 `;
 
-const InfoCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 8px;
-  
-  .info-label {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
-  
-  .info-value {
-    font-size: 16px;
-    color: #333;
+const Btn = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    font-size: 13px;
     font-weight: 600;
-  }
+    font-family: inherit;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    white-space: nowrap;
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 `;
 
-const ProfileCard = styled.div`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px solid #00529b;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  
-  .profile-label {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 8px;
-    font-weight: 500;
-  }
-  
-  .profile-value {
-    font-size: 18px;
-    color: #00529b;
-    font-weight: 700;
-  }
+const PrimaryBtn = styled(Btn)`
+    background: #fff;
+    color: #1a4494;
+    &:hover {
+        background: #f0f7ff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
 `;
+
+const DangerGhostBtn = styled(Btn)`
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    &:hover {
+        background: rgba(220, 38, 38, 0.25);
+        color: #fff;
+    }
+`;
+
+const Content = styled.div`
+    margin-top: -44px;
+    position: relative;
+    z-index: 2;
+`;
+
+const Section = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(12, 45, 107, 0.06);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    margin-bottom: 18px;
+    overflow: hidden;
+    animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: ${(p) => p.$d || '0.15s'};
+`;
+
+const SectionHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef2f9;
+    svg {
+        width: 18px;
+        height: 18px;
+        color: #1a4494;
+    }
+    h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0c2d6b;
+    }
+`;
+
+const FieldsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(${(p) => p.$cols || 2}, 1fr);
+    gap: 0;
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+const Field = styled.div`
+    padding: 18px 24px;
+    border-bottom: 1px solid #f5f8fd;
+    border-right: 1px solid #f5f8fd;
+    &:last-child {
+        border-bottom: none;
+    }
+    @media (max-width: 768px) {
+        border-right: none;
+    }
+`;
+
+const FieldLabel = styled.div`
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b86b8;
+    margin-bottom: 6px;
+`;
+
+const FieldValue = styled.div`
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c2d6b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    ${(p) => p.$muted && 'color: #a8b8d0; font-weight: 400;'}
+`;
+
+const PerfilPill = styled.span`
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: ${(p) => (p.$admin ? '#a61b1b' : '#237804')};
+    background: ${(p) => (p.$admin ? '#fff1f0' : '#e6f7e6')};
+`;
+
+const AvatarWrap = styled.div`
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+`;
+
+const LoadWrap = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    gap: 16px;
+    color: #6b86b8;
+    .ant-spin-dot-item {
+        background-color: #1a4494 !important;
+    }
+`;
+
+const ConfirmOverlay = styled.div`
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10, 30, 61, 0.5);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ${fadeIn} 0.15s ease;
+`;
+
+const ConfirmBox = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0c2d6b;
+    }
+    p {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: #6b86b8;
+        line-height: 1.5;
+    }
+`;
+
+const ConfirmActions = styled.div`
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+`;
+
+function getImageSrc(fotoUrl, fotoPerfil) {
+    const src = fotoUrl || fotoPerfil;
+    if (!src) return null;
+    if (src.startsWith('http')) return src;
+    if (src.startsWith('data:image')) return src;
+    return `data:image/jpeg;base64,${src}`;
+}
+
+function getProfileText(perfil) {
+    if (perfil === 'ADMIN') return 'Administrador';
+    if (perfil === 'TECNICO') return 'Técnico';
+    return perfil || '—';
+}
 
 function UsuarioDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [usuario, setUsuario] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showDelete, setShowDelete] = useState(false);
 
     useEffect(() => {
         const fetchUsuarioDetails = async () => {
@@ -225,173 +336,139 @@ function UsuarioDetailPage() {
             navigate('/admin/usuarios');
         } catch (err) {
             console.error('Erro ao deletar usuário:', err);
-            message.error('Falha ao deletar usuário.');
+            message.error(err.response?.data?.message || 'Falha ao deletar usuário.');
         }
+        setShowDelete(false);
     };
 
-    const getProfileColor = (perfil) => {
-        switch (perfil) {
-            case 'ADMIN':
-                return 'red';
-            case 'TECNICO':
-                return 'green';
-            default:
-                return 'default';
-        }
-    };
-
-    const getProfileText = (perfil) => {
-        switch (perfil) {
-            case 'ADMIN':
-                return 'Administrador';
-            case 'TECNICO':
-                return 'Técnico';
-            default:
-                return perfil;
-        }
-    };
+    const val = (v) => v || '—';
 
     if (isLoading) {
         return (
-            <PageContainer>
-                <LoadingContainer>
+            <Page>
+                <LoadWrap>
                     <Spin size="large" />
-                    <Typography.Text>Carregando dados do usuário...</Typography.Text>
-                </LoadingContainer>
-            </PageContainer>
+                    <span>Carregando dados do usuário...</span>
+                </LoadWrap>
+            </Page>
         );
     }
 
     if (!usuario) {
         return (
-            <PageContainer>
-                <LoadingContainer>
-                    <Typography.Text>Usuário não encontrado.</Typography.Text>
-                </LoadingContainer>
-            </PageContainer>
+            <Page>
+                <LoadWrap>
+                    <span>Usuário não encontrado.</span>
+                </LoadWrap>
+            </Page>
         );
     }
 
+    const avatarSrc = getImageSrc(usuario.fotoUrl, usuario.fotoPerfil);
+
     return (
-        <PageContainer>
-            <HeaderContainer>
-                <TitleContainer>
-                    <Button
-                        type="text"
-                        icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate(-1)}
-                        style={{ fontSize: '18px', color: '#00529b' }}
-                    />
-                    <TitleStyled level={2}>
-                        <Space>
-                            <UserOutlined />
-                            <span>Detalhes do Usuário</span>
-                        </Space>
-                    </TitleStyled>
-                </TitleContainer>
-                <ActionButtons>
-                    <Button
-                        type="primary"
-                        icon={<EditOutlined />}
-                        onClick={() => navigate(`/admin/usuarios/editar/${id}`)}
-                    >
-                        Editar
-                    </Button>
-                    <Popconfirm
-                        title="Excluir Usuário"
-                        description={`Deseja realmente excluir o usuário "${usuario.nome}"? Esta ação não pode ser desfeita.`}
-                        onConfirm={handleDelete}
-                        okText="Sim"
-                        cancelText="Não"
-                        okType="danger"
-                    >
-                        <Button
-                            danger
-                            icon={<DeleteOutlined />}
-                        >
-                            Excluir
-                        </Button>
-                    </Popconfirm>
-                </ActionButtons>
-            </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <BackBtn type="button" onClick={() => navigate('/admin/usuarios')} aria-label="Voltar">
+                            <FiArrowLeft />
+                        </BackBtn>
+                        <HeroInfo>
+                            <h1>{usuario.nome}</h1>
+                            <p>{val(usuario.email)}</p>
+                        </HeroInfo>
+                    </HeroLeft>
+                    <HeroActions>
+                        <PrimaryBtn type="button" onClick={() => navigate(`/admin/usuarios/editar/${id}`)}>
+                            <FiEdit2 /> Editar
+                        </PrimaryBtn>
+                        <DangerGhostBtn type="button" onClick={() => setShowDelete(true)}>
+                            <FiTrash2 /> Excluir
+                        </DangerGhostBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-            <StyledCard
-                title={
-                    <Space>
-                        <UserOutlined />
-                        <span>{usuario.nome}</span>
-                    </Space>
-                }
-            >
-                <SectionTitle>
-                    <InfoCircleOutlined />
-                    <span>Informações Gerais</span>
-                </SectionTitle>
-                <Row gutter={[16, 16]}>
-                    <Col xs={24} md={12}>
-                        <InfoCard>
-                            <div className="info-label">Nome Completo</div>
-                            <div className="info-value">{usuario.nome}</div>
-                        </InfoCard>
-                    </Col>
-                    <Col xs={24} md={12}>
-                        <InfoCard>
-                            <div className="info-label">Email</div>
-                            <div className="info-value">{usuario.email}</div>
-                        </InfoCard>
-                    </Col>
-                    {usuario.cracha && (
-                        <Col xs={24} md={12}>
-                            <InfoCard>
-                                <div className="info-label">Crachá</div>
-                                <div className="info-value">{usuario.cracha}</div>
-                            </InfoCard>
-                        </Col>
-                    )}
-                </Row>
-            </StyledCard>
+            <Content>
+                <Section $d="0.1s">
+                    <SectionHeader>
+                        <FiUser />
+                        <h3>Informações gerais</h3>
+                    </SectionHeader>
+                    <FieldsGrid $cols={2}>
+                        <Field>
+                            <FieldLabel>Nome completo</FieldLabel>
+                            <FieldValue>{val(usuario.nome)}</FieldValue>
+                        </Field>
+                        <Field>
+                            <FieldLabel>E-mail</FieldLabel>
+                            <FieldValue>
+                                <FiMail style={{ color: '#6b86b8' }} />
+                                {val(usuario.email)}
+                            </FieldValue>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Crachá</FieldLabel>
+                            <FieldValue $muted={!usuario.cracha}>
+                                <FiCreditCard style={{ color: '#6b86b8' }} />
+                                {val(usuario.cracha)}
+                            </FieldValue>
+                        </Field>
+                    </FieldsGrid>
+                </Section>
 
-            <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                    <StyledCard
-                        title={
-                            <Space>
-                                <TeamOutlined />
-                                <span>Perfil</span>
-                            </Space>
-                        }
-                    >
-                        <ProfileCard>
-                            <div className="profile-label">Tipo de Usuário</div>
-                            <div className="profile-value">
-                                <Tag color={getProfileColor(usuario.perfil)} size="large">
-                                    {getProfileText(usuario.perfil)}
-                                </Tag>
-                            </div>
-                        </ProfileCard>
-                    </StyledCard>
-                </Col>
-                <Col xs={24} md={12}>
-                    <StyledCard
-                        title={
-                            <Space>
-                                <UserOutlined />
-                                <span>Avatar</span>
-                            </Space>
-                        }
-                    >
-                        <div style={{ textAlign: 'center' }}>
-                            <Avatar
-                                size={80}
-                                icon={<UserOutlined />}
-                                style={{ backgroundColor: '#00529b', fontSize: '32px' }}
-                            />
-                        </div>
-                    </StyledCard>
-                </Col>
-            </Row>
-        </PageContainer>
+                <Section $d="0.18s">
+                    <SectionHeader>
+                        <FiUsers />
+                        <h3>Perfil</h3>
+                    </SectionHeader>
+                    <FieldsGrid $cols={1}>
+                        <Field>
+                            <FieldLabel>Tipo de usuário</FieldLabel>
+                            <FieldValue>
+                                <PerfilPill $admin={usuario.perfil === 'ADMIN'}>{getProfileText(usuario.perfil)}</PerfilPill>
+                            </FieldValue>
+                        </Field>
+                    </FieldsGrid>
+                </Section>
+
+                <Section $d="0.26s">
+                    <SectionHeader>
+                        <FiUser />
+                        <h3>Foto</h3>
+                    </SectionHeader>
+                    <AvatarWrap>
+                        <Avatar size={96} src={avatarSrc} icon={!avatarSrc && <FiUser />} style={{ backgroundColor: '#1a4494' }} />
+                    </AvatarWrap>
+                </Section>
+            </Content>
+
+            {showDelete && (
+                <ConfirmOverlay onClick={() => setShowDelete(false)}>
+                    <ConfirmBox onClick={(e) => e.stopPropagation()}>
+                        <FiAlertCircle style={{ width: 40, height: 40, color: '#dc2626', marginBottom: 12 }} />
+                        <h3>Excluir usuário?</h3>
+                        <p>
+                            Deseja realmente excluir <strong>{usuario.nome}</strong>? Esta ação não pode ser desfeita.
+                        </p>
+                        <ConfirmActions>
+                            <Btn
+                                type="button"
+                                style={{ background: '#f4f7fb', color: '#6b86b8' }}
+                                onClick={() => setShowDelete(false)}
+                            >
+                                Cancelar
+                            </Btn>
+                            <Btn type="button" style={{ background: '#dc2626', color: '#fff' }} onClick={handleDelete}>
+                                <FiTrash2 /> Excluir
+                            </Btn>
+                        </ConfirmActions>
+                    </ConfirmBox>
+                </ConfirmOverlay>
+            )}
+        </Page>
     );
 }
 
-export default UsuarioDetailPage; 
+export default UsuarioDetailPage;

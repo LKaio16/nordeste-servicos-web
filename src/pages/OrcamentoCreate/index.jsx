@@ -7,7 +7,6 @@ import { pecaMaterialService } from '../../services/pecaMaterialService';
 import tipoServicoService from '../../services/tipoServicoService';
 import itemOrcamentoService from '../../services/itemOrcamentoService';
 import {
-    Card,
     Form,
     Input,
     Select,
@@ -29,7 +28,6 @@ import {
 } from 'antd';
 import {
     SaveOutlined,
-    ArrowLeftOutlined,
     UserOutlined,
     FileTextOutlined,
     CalendarOutlined,
@@ -42,139 +40,216 @@ import {
     DollarOutlined,
     PercentageOutlined
 } from '@ant-design/icons';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import dayjs from 'dayjs';
+import { FiArrowLeft, FiSave, FiFileText, FiShoppingCart } from 'react-icons/fi';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-// Styled Components
-const PageContainer = styled.div`
-  padding: 0 24px 24px 24px;
-  background: #f8f9fa;
-  min-height: 100vh;
-  
-  @media (max-width: 768px) {
-    padding: 0 16px 16px 16px;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0 8px 8px 8px;
-  }
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
 `;
 
-const StyledCard = styled(Card)`
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
-  border: none;
+const Page = styled.div`
+  padding-bottom: 32px;
+  animation: ${fadeIn} 0.3s ease both;
+`;
+
+const Hero = styled.div`
+  background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+  margin: -24px -32px 0;
+  padding: 32px 36px 72px;
+  position: relative;
   overflow: hidden;
-  
-  .ant-card-head {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
-    border-bottom: none;
-    
-    .ant-card-head-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
+  animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  &::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -40px;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
   }
-  
-  .ant-card-body {
-    padding: 32px;
+  @media (max-width: 768px) {
+    margin: -16px -16px 0;
+    padding: 24px 20px 64px;
   }
 `;
 
-const HeaderContainer = styled.div`
+const HeroInner = styled.div`
+  position: relative;
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+`;
+
+const HeroLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+const BackBtn = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
-  
-  @media (max-width: 480px) {
-    padding: 12px;
-    margin-bottom: 16px;
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
 
-const TitleStyled = styled(Title)`
-  color: #00529b !important;
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 28px !important;
+const HeroInfo = styled.div`
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.65);
+  }
 `;
 
-const ActionButtons = styled(Space)`
-  .ant-btn {
-    border-radius: 8px;
-    font-weight: 500;
-    height: 48px;
-    padding: 0 24px;
-    font-size: 16px;
-    border: 2px solid #d9d9d9;
-    
-    &.ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-      border: 2px solid #1890ff;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-      
-      &:hover {
-        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-        border-color: #40a9ff;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
-      }
-    }
-    
-    &.ant-btn-default {
-      background: white;
-      border: 2px solid #d9d9d9;
-      color: #333;
-      
-      &:hover {
-        background: #f5f5f5;
-        border-color: #00529b;
-        color: #00529b;
-      }
-    }
+const HeroActions = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+`;
+
+const Btn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  white-space: nowrap;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
-  
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: center;
-    
-    .ant-btn {
-      height: 44px;
-      padding: 0 20px;
-      font-size: 14px;
-    }
+  svg {
+    width: 16px;
+    height: 16px;
   }
-  
-  @media (max-width: 480px) {
-    .ant-btn {
-      height: 40px;
-      padding: 0 16px;
-      font-size: 13px;
-    }
+`;
+
+const PrimaryBtn = styled(Btn)`
+  background: #fff;
+  color: #1a4494;
+  &:hover:not(:disabled) {
+    background: #f0f7ff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+`;
+
+const GhostBtn = styled(Btn)`
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const Content = styled.div`
+  margin-top: -44px;
+  position: relative;
+  z-index: 2;
+`;
+
+const FormCard = styled.div`
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(12, 45, 107, 0.1);
+  border: 1px solid rgba(26, 68, 148, 0.06);
+  overflow: hidden;
+  margin-bottom: 18px;
+  animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+`;
+
+const SectionHead = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 28px;
+  background: #f8faff;
+  border-bottom: 1px solid #eef2f9;
+  svg {
+    width: 18px;
+    height: 18px;
+    color: #1a4494;
+  }
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0c2d6b;
+  }
+`;
+
+const FormBody = styled.div`
+  padding: 24px 28px;
+`;
+
+const LoadWrap = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  flex-direction: column;
+  gap: 12px;
+  color: #6b86b8;
+  font-weight: 600;
+  .ant-spin-dot-item {
+    background-color: #1a4494 !important;
   }
 `;
 
 const StyledForm = styled(Form)`
   .ant-form-item-label > label {
     font-weight: 600;
-    color: #00529b;
+    color: #1a4494;
     font-size: 16px;
   }
   
@@ -189,8 +264,8 @@ const StyledForm = styled(Form)`
     min-height: 48px;
     
     &:hover, &:focus {
-      border-color: #00529b;
-      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.1);
+      border-color: #1a4494;
+      box-shadow: 0 0 0 2px rgba(26, 68, 148, 0.1);
     }
   }
   
@@ -232,8 +307,8 @@ const StyledForm = styled(Form)`
     }
     
     &.ant-select-focused .ant-select-selector {
-      border-color: #00529b;
-      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.1);
+      border-color: #1a4494;
+      box-shadow: 0 0 0 2px rgba(26, 68, 148, 0.1);
     }
   }
   
@@ -254,8 +329,8 @@ const StyledForm = styled(Form)`
     }
     
     &.ant-picker-focused {
-      border-color: #00529b;
-      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.1);
+      border-color: #1a4494;
+      box-shadow: 0 0 0 2px rgba(26, 68, 148, 0.1);
     }
   }
   
@@ -269,8 +344,8 @@ const StyledForm = styled(Form)`
     line-height: 1.5;
     
     &:hover, &:focus {
-      border-color: #00529b;
-      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.1);
+      border-color: #1a4494;
+      box-shadow: 0 0 0 2px rgba(26, 68, 148, 0.1);
     }
   }
   
@@ -289,22 +364,8 @@ const StyledForm = styled(Form)`
   }
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  flex-direction: column;
-  gap: 16px;
-  
-  .ant-typography {
-    font-size: 18px;
-    color: #666;
-  }
-`;
-
 const ItemsContainer = styled.div`
-  margin-top: 24px;
+  margin-top: 0;
 `;
 
 const ItemsHeader = styled.div`
@@ -323,7 +384,7 @@ const TotalContainer = styled.div`
   justify-content: flex-end;
   margin-top: 16px;
   padding: 16px;
-  background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+  background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 100%);
   border-radius: 8px;
   color: white;
   
@@ -342,7 +403,7 @@ const TotalContainer = styled.div`
 const StyledTable = styled(Table)`
   .ant-table-thead > tr > th {
     background: #f8f9fa;
-    color: #00529b;
+    color: #1a4494;
     font-weight: 600;
     border-bottom: 2px solid #e8e8e8;
     padding: 12px 8px;
@@ -406,7 +467,7 @@ const StyledTable = styled(Table)`
 
 const ItemModal = styled(Modal)`
   .ant-modal-header {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 100%);
     border-bottom: none;
     padding: 20px 24px;
     
@@ -469,8 +530,8 @@ function OrcamentoCreatePage() {
     const [form] = Form.useForm();
     const [itemForm] = Form.useForm();
     const [clientes, setClientes] = useState([]);
-    const [ordensServico, setOrdensServico] = useState([]);
     const [ordensServicoFiltradas, setOrdensServicoFiltradas] = useState([]);
+    const [loadingOsCliente, setLoadingOsCliente] = useState(false);
     const [pecasMateriais, setPecasMateriais] = useState([]);
     const [tiposServico, setTiposServico] = useState([]);
     const [itens, setItens] = useState([]);
@@ -483,17 +544,14 @@ function OrcamentoCreatePage() {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const [clientesData, osData, pecasData, tiposData] = await Promise.all([
+                const [clientesData, pecasData, tiposData] = await Promise.all([
                     getAllClientes(),
-                    osService.getAllOrdensServico('', 0, 1000), // Busca até 1000 OS para o select
                     pecaMaterialService.getAllPecasMateriais(),
                     tipoServicoService.getAllTiposServico()
                 ]);
                 setClientes(clientesData);
-                setOrdensServico(osData);
                 setPecasMateriais(pecasData);
                 setTiposServico(tiposData);
-                // Inicialmente, não mostra nenhuma OS (até que um cliente seja selecionado)
                 setOrdensServicoFiltradas([]);
             } catch (fetchError) {
                 console.error("Erro ao carregar dados dos dropdowns:", fetchError);
@@ -672,7 +730,7 @@ function OrcamentoCreatePage() {
                 if (record.pecaMaterial) {
                     return (
                         <div>
-                            <div style={{ fontWeight: 600, color: '#00529b' }}>
+                            <div style={{ fontWeight: 600, color: '#1a4494' }}>
                                 {record.pecaMaterial.nome}
                             </div>
                             <div style={{ fontSize: '12px', color: '#666' }}>
@@ -683,14 +741,14 @@ function OrcamentoCreatePage() {
                 } else if (record.tipoServico) {
                     return (
                         <div>
-                            <div style={{ fontWeight: 600, color: '#00529b' }}>
+                            <div style={{ fontWeight: 600, color: '#1a4494' }}>
                                 {record.tipoServico.descricao}
                             </div>
                         </div>
                     );
                 } else {
                     return (
-                        <div style={{ fontWeight: 600, color: '#00529b' }}>
+                        <div style={{ fontWeight: 600, color: '#1a4494' }}>
                             {record.descricao}
                         </div>
                     );
@@ -786,51 +844,77 @@ function OrcamentoCreatePage() {
         }
     ];
 
-    // Função para filtrar OS baseadas no cliente selecionado
-    const handleClienteChange = (clienteId) => {
-        if (clienteId) {
-            // Filtra as OS que pertencem ao cliente selecionado
-            const osFiltradas = ordensServico.filter(os =>
-                os.cliente && os.cliente.id === clienteId
-            );
-            setOrdensServicoFiltradas(osFiltradas);
-        } else {
-            // Se nenhum cliente selecionado, mostra todas as OS
-            setOrdensServicoFiltradas(ordensServico);
-        }
-
-        // Limpa a seleção de OS quando o cliente muda
+    // Carrega só as OS do cliente escolhido (evita puxar centenas/milhares de registros na abertura da tela)
+    const handleClienteChange = async (clienteId) => {
         form.setFieldsValue({ ordemServicoOrigemId: undefined });
+        if (!clienteId) {
+            setOrdensServicoFiltradas([]);
+            return;
+        }
+        setLoadingOsCliente(true);
+        try {
+            const osData = await osService.getAllOrdensServico('', 0, 200, { clienteId });
+            setOrdensServicoFiltradas(Array.isArray(osData) ? osData : []);
+        } catch (e) {
+            console.error(e);
+            message.error('Não foi possível carregar as ordens de serviço deste cliente.');
+            setOrdensServicoFiltradas([]);
+        } finally {
+            setLoadingOsCliente(false);
+        }
     };
 
     if (isLoading) {
         return (
-            <PageContainer>
-                <LoadingContainer>
-                    <Spin size="large" />
-                    <Text>Carregando dados...</Text>
-                </LoadingContainer>
-            </PageContainer>
+            <Page>
+                <Hero>
+                    <HeroInner>
+                        <HeroInfo>
+                            <h1>Novo orçamento</h1>
+                        </HeroInfo>
+                    </HeroInner>
+                </Hero>
+                <Content>
+                    <LoadWrap>
+                        <Spin size="large" />
+                        Carregando dados...
+                    </LoadWrap>
+                </Content>
+            </Page>
         );
     }
 
     return (
-        <PageContainer>
-            <HeaderContainer>
-                <TitleStyled level={2}>
-                    Novo Orçamento
-                </TitleStyled>
-                <ActionButtons>
-                    <Button
-                        icon={<ArrowLeftOutlined />}
-                        onClick={handleCancel}
-                    >
-                        Voltar
-                    </Button>
-                </ActionButtons>
-            </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <BackBtn type="button" onClick={handleCancel}>
+                            <FiArrowLeft />
+                        </BackBtn>
+                        <HeroInfo>
+                            <h1>Novo orçamento</h1>
+                            <p>Preencha os dados e adicione itens</p>
+                        </HeroInfo>
+                    </HeroLeft>
+                    <HeroActions>
+                        <GhostBtn type="button" onClick={handleCancel}>
+                            <FiArrowLeft /> Voltar
+                        </GhostBtn>
+                        <PrimaryBtn type="button" onClick={() => form.submit()} disabled={isSubmitting}>
+                            <FiSave /> {isSubmitting ? 'Criando...' : 'Criar orçamento'}
+                        </PrimaryBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-            <StyledCard title="Informações do Orçamento">
+            <Content>
+            <FormCard>
+                <SectionHead>
+                    <FiFileText />
+                    <h3>Informações do orçamento</h3>
+                </SectionHead>
+                <FormBody>
                 <StyledForm
                     form={form}
                     layout="vertical"
@@ -885,17 +969,18 @@ function OrcamentoCreatePage() {
                                 <Select
                                     placeholder={
                                         form.getFieldValue('clienteId')
-                                            ? "Selecione uma OS do cliente"
-                                            : "Primeiro selecione um cliente"
+                                            ? (loadingOsCliente ? 'Carregando OS...' : 'Selecione uma OS do cliente')
+                                            : 'Primeiro selecione um cliente'
                                     }
                                     allowClear
                                     showSearch
                                     optionFilterProp="label"
-                                    disabled={!form.getFieldValue('clienteId')}
+                                    disabled={!form.getFieldValue('clienteId') || loadingOsCliente}
+                                    loading={loadingOsCliente}
                                 >
                                     {ordensServicoFiltradas.map(os => (
                                         <Option key={os.id} value={os.id}>
-                                            {os.numeroOS} - {os.cliente?.nomeCompleto || 'Cliente não encontrado'}
+                                            {os.numeroOS} - {os.cliente?.nomeCompleto || os.clienteNome || 'Cliente não encontrado'}
                                         </Option>
                                     ))}
                                 </Select>
@@ -984,20 +1069,20 @@ function OrcamentoCreatePage() {
                         </Space>
                     </Row>
                 </StyledForm>
-            </StyledCard>
+                </FormBody>
+            </FormCard>
 
             {orcamentoId && (
                 <ItemsContainer>
-                    <StyledCard title="Itens do Orçamento">
+                    <FormCard>
+                        <SectionHead>
+                            <FiShoppingCart />
+                            <h3>Itens do orçamento</h3>
+                        </SectionHead>
+                        <FormBody>
                         <ItemsHeader>
                             <div>
-                                <Title level={4} style={{ margin: 0, color: '#00529b' }}>
-                                    <Space>
-                                        <ShoppingCartOutlined />
-                                        <span>Itens do Orçamento</span>
-                                    </Space>
-                                </Title>
-                                <Text type="secondary">
+                                <Text type="secondary" style={{ fontSize: 15 }}>
                                     {itens.length} item(s) adicionado(s)
                                 </Text>
                             </div>
@@ -1085,9 +1170,12 @@ function OrcamentoCreatePage() {
                                 </div>
                             </div>
                         )}
-                    </StyledCard>
+                        </FormBody>
+                    </FormCard>
                 </ItemsContainer>
             )}
+
+            </Content>
 
             {/* Modal para adicionar/editar item */}
             <ItemModal
@@ -1270,7 +1358,7 @@ function OrcamentoCreatePage() {
                                         if (isNaN(numValue)) return '';
                                         return isNegative ? -numValue : numValue;
                                     }}
-                                    addonBefore={<span style={{ color: '#00529b', fontWeight: 600, fontSize: '16px' }}>R$</span>}
+                                    addonBefore={<span style={{ color: '#1a4494', fontWeight: 600, fontSize: '16px' }}>R$</span>}
                                 />
                             </Form.Item>
                         </Col>
@@ -1298,7 +1386,7 @@ function OrcamentoCreatePage() {
                     </Row>
                 </Form>
             </ItemModal>
-        </PageContainer>
+        </Page>
     );
 }
 

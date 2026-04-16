@@ -1,219 +1,143 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import {
-    ArrowLeftOutlined,
-    SaveOutlined,
-    UserOutlined,
-    PlusOutlined,
-    IdcardOutlined,
-    PhoneOutlined,
-    MailOutlined,
-    HomeOutlined
-} from '@ant-design/icons';
+import styled, { keyframes } from 'styled-components';
+import { FiArrowLeft, FiSave, FiUserPlus, FiMapPin } from 'react-icons/fi';
 import { createCliente } from '../../services/clienteService';
 import { buscarEnderecoPorCEP } from '../../utils/cepService';
-import {
-    Card,
-    Button,
-    Typography,
-    Space,
-    message,
-    Form,
-    Input,
-    Select,
-    Row,
-    Col,
-    Divider,
-    Spin
-} from 'antd';
+import { Form, Input, Select, message, Spin, Row, Col } from 'antd';
 
-const { Title, Text } = Typography;
-
-// Styled Components
-const PageContainer = styled.div`
-  padding: 0 24px 24px 24px;
-  background: #f8f9fa;
-  min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
 `;
 
-const StyledCard = styled(Card)`
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
-  border: none;
-  overflow: hidden;
-  
-  .ant-card-head {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
-    border-bottom: none;
-    
-    .ant-card-head-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-  }
-  
-  .ant-card-body {
-    padding: 0 24px 24px 24px;
-  }
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
 `;
 
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  color: #333;
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 32px 36px 72px;
+    position: relative; overflow: hidden;
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    &::before { content:''; position:absolute; top:-80px; right:-40px; width:400px; height:400px; border-radius:50%; background:rgba(255,255,255,0.04); }
+    @media (max-width: 768px) { margin: -16px -16px 0; padding: 24px 20px 64px; }
 `;
 
-const TitleStyled = styled(Title)`
-  color: #00529b !important;
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 28px !important;
+const HeroInner = styled.div`
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 `;
 
-const ActionButtons = styled(Space)`
-  .ant-btn {
-    border-radius: 8px;
-    font-weight: 500;
-    height: 48px;
-    padding: 0 20px;
-    font-size: 16px;
-    border: 2px solid #d9d9d9;
-    
-    &.ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-      border: none;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-      
-      &:hover {
-        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
-      }
-    }
-    
-    &.ant-btn-default {
-      background: white;
-      border: 2px solid #d9d9d9;
-      color: #333;
-      
-      &:hover {
-        background: #f5f5f5;
-        border-color: #00529b;
-        color: #00529b;
-      }
-    }
-  }
+const HeroLeft = styled.div`
+    display: flex; align-items: center; gap: 16px;
+`;
+
+const BackBtn = styled.button`
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+    &:hover { background: rgba(255,255,255,0.2); }
+    svg { width: 18px; height: 18px; }
+`;
+
+const HeroInfo = styled.div`
+    h1 { margin: 0; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    p { margin: 4px 0 0; font-size: 14px; color: rgba(255,255,255,0.65); }
+`;
+
+const HeroActions = styled.div`
+    display: flex; gap: 10px; flex-wrap: wrap;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+`;
+
+const Btn = styled.button`
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; font-size: 13px; font-weight: 600; font-family: inherit;
+    border-radius: 10px; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap;
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    svg { width: 16px; height: 16px; }
+`;
+
+const PrimaryBtn = styled(Btn)`
+    background: #fff; color: #1a4494;
+    &:hover:not(:disabled) { background: #f0f7ff; box-shadow: 0 4px 16px rgba(0,0,0,0.15); transform: translateY(-1px); }
+`;
+
+const GhostBtn = styled(Btn)`
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.15);
+    &:hover { background: rgba(255,255,255,0.2); }
+`;
+
+const Content = styled.div`
+    margin-top: -44px; position: relative; z-index: 2;
+`;
+
+const FormCard = styled.div`
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(12,45,107,0.1); border: 1px solid rgba(26,68,148,0.06);
+    overflow: hidden;
+    animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+`;
+
+const SectionHead = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 28px; background: #f8faff; border-bottom: 1px solid #eef2f9;
+    svg { width: 18px; height: 18px; color: #1a4494; }
+    h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0c2d6b; }
+`;
+
+const FormBody = styled.div`
+    padding: 24px 28px;
 `;
 
 const StyledForm = styled(Form)`
-  .ant-form-item-label > label {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .ant-input,
-  .ant-select-selector {
-    height: 48px;
-    font-size: 16px;
-    border: 2px solid #d9d9d9;
-    border-radius: 8px;
-    
-    &:hover {
-      border-color: #00529b;
+    .ant-form-item-label > label {
+        font-size: 13px; font-weight: 600; color: #0c2d6b;
     }
-    
-    &:focus,
-    &.ant-input-focused,
-    &.ant-select-focused .ant-select-selector {
-      border-color: #00529b;
-      box-shadow: 0 0 0 2px rgba(0, 82, 155, 0.2);
+    .ant-input, .ant-select-selector {
+        height: 44px !important; font-size: 14px;
+        border: 1.5px solid #dde4f0 !important; border-radius: 10px !important;
+        &:hover { border-color: #1a4494 !important; }
+        &:focus, &.ant-input-focused { border-color: #1a4494 !important; box-shadow: 0 0 0 3px rgba(26,68,148,0.08) !important; }
     }
-  }
-  
-  .ant-select-selector {
-    height: 48px !important;
-    
-    .ant-select-selection-item {
-      line-height: 44px;
+    .ant-select-selector {
+        .ant-select-selection-item { line-height: 42px !important; }
     }
-  }
-  
-  .ant-form-item-explain-error {
-    font-size: 14px;
-  }
+    .ant-select-focused .ant-select-selector {
+        border-color: #1a4494 !important; box-shadow: 0 0 0 3px rgba(26,68,148,0.08) !important;
+    }
+    .ant-form-item-explain-error { font-size: 12px; }
 `;
 
-const SectionTitle = styled.div`
-  font-size: 18px;
-  font-weight: 600;
-  color: #00529b;
-  margin: 24px 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #e8e8e8;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+const LoadWrap = styled.div`
+    display: flex; align-items: center; justify-content: center;
+    min-height: 40vh;
+    .ant-spin-dot-item { background-color: #1a4494 !important; }
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  gap: 16px;
-  
-  .ant-spin {
-    .ant-spin-text {
-      font-size: 18px;
-      color: #00529b;
-      font-weight: 500;
-    }
-  }
-`;
-
-
-// --- Helper functions for masks ---
-const formatCEP = (value) => {
-    return value
-        .replace(/\D/g, '')
-        .replace(/(\d{5})(\d)/, '$1-$2')
-        .slice(0, 9);
+const formatCEP = (v) => v.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+const formatPhone = (v) => {
+    const c = v.replace(/\D/g, '').slice(0, 11);
+    return c.length > 10 ? c.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : c.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
 };
-
-const formatPhone = (value) => {
-    const cleanValue = value.replace(/\D/g, '').slice(0, 11);
-    if (cleanValue.length > 10) {
-        return cleanValue.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-    return cleanValue.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+const formatCPF_CNPJ = (v) => {
+    const c = v.replace(/\D/g, '').slice(0, 14);
+    if (c.length <= 11) return c.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return c.replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
 };
-
-const formatCPF_CNPJ = (value) => {
-    const cleanValue = value.replace(/\D/g, '').slice(0, 14);
-    if (cleanValue.length <= 11) {
-        return cleanValue
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    }
-    return cleanValue
-        .replace(/(\d{2})(\d)/, '$1.$2')
-        .replace(/(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-        .replace(/\.(\d{3})(\d)/, '.$1/$2')
-        .replace(/(\d{4})(\d)/, '$1-$2');
-};
-// ------------------------------------
-
 
 function ClienteCreate() {
     const navigate = useNavigate();
@@ -222,35 +146,23 @@ function ClienteCreate() {
     const [isLoadingCEP, setIsLoadingCEP] = useState(false);
 
     const handleCEPChange = async (e) => {
-        const cepValue = e.target.value;
-        const formatted = formatCEP(cepValue);
+        const formatted = formatCEP(e.target.value);
         form.setFieldsValue({ cep: formatted });
-
-        // Busca endereço quando CEP estiver completo (8 dígitos)
-        const cepLimpo = cepValue.replace(/\D/g, '');
+        const cepLimpo = e.target.value.replace(/\D/g, '');
         if (cepLimpo.length === 8) {
             setIsLoadingCEP(true);
             try {
-                const endereco = await buscarEnderecoPorCEP(cepLimpo);
-                form.setFieldsValue({
-                    rua: endereco.rua,
-                    bairro: endereco.bairro,
-                    cidade: endereco.cidade,
-                    estado: endereco.estado,
-                });
+                const end = await buscarEnderecoPorCEP(cepLimpo);
+                form.setFieldsValue({ rua: end.rua, bairro: end.bairro, cidade: end.cidade, estado: end.estado });
                 message.success('Endereço encontrado!');
-            } catch (error) {
-                message.warning('CEP não encontrado. Preencha o endereço manualmente.');
-            } finally {
-                setIsLoadingCEP(false);
-            }
+            } catch { message.warning('CEP não encontrado.'); }
+            finally { setIsLoadingCEP(false); }
         }
     };
 
     const handleSubmit = async (values) => {
         setIsSubmitting(true);
         try {
-            // Remove masks before sending to backend
             const payload = {
                 ...values,
                 cep: values.cep?.replace(/\D/g, '') || '',
@@ -261,289 +173,121 @@ function ClienteCreate() {
             await createCliente(payload);
             message.success('Cliente criado com sucesso!');
             navigate('/admin/clientes');
-        } catch (error) {
-            console.error('Erro ao criar cliente:', error);
-            message.destroy();
-            message.error({
-                content: error.message || 'Falha ao criar o cliente. Verifique os dados e tente novamente.',
-                duration: 6,
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
+        } catch (err) { message.error(err.message || 'Falha ao criar o cliente.'); }
+        finally { setIsSubmitting(false); }
     };
 
     return (
-        <PageContainer>
-            <StyledCard
-                title={
-                    <Space>
-                        <UserOutlined />
-                        <span>Novo Cliente</span>
-                    </Space>
-                }
-            >
-                <HeaderContainer>
-                    <TitleStyled level={2}>
-                        <Space>
-                            <PlusOutlined />
-                            <span>Cadastrar Novo Cliente</span>
-                        </Space>
-                    </TitleStyled>
-                    <ActionButtons>
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate('/admin/clientes')}
-                        >
-                            Voltar
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<SaveOutlined />}
-                            onClick={() => form.submit()}
-                            loading={isSubmitting}
-                        >
-                            Salvar Cliente
-                        </Button>
-                    </ActionButtons>
-                </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <BackBtn onClick={() => navigate('/admin/clientes')}><FiArrowLeft /></BackBtn>
+                        <HeroInfo>
+                            <h1>Novo Cliente</h1>
+                            <p>Preencha os dados para cadastrar</p>
+                        </HeroInfo>
+                    </HeroLeft>
+                    <HeroActions>
+                        <GhostBtn onClick={() => navigate('/admin/clientes')}>
+                            <FiArrowLeft /> Cancelar
+                        </GhostBtn>
+                        <PrimaryBtn onClick={() => form.submit()} disabled={isSubmitting}>
+                            <FiSave /> {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
+                        </PrimaryBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-                <StyledForm
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleSubmit}
-                    initialValues={{
-                        tipoCliente: 'PESSOA_FISICA'
-                    }}
-                >
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24}>
-                            <Form.Item
-                                name="nomeCompleto"
-                                label={
-                                    <Space>
-                                        <UserOutlined />
-                                        <span>Nome Completo</span>
-                                    </Space>
-                                }
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o nome completo!' },
-                                    { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="Digite o nome completo do cliente..."
-                                    showCount
-                                    maxLength={100}
-                                />
-                            </Form.Item>
-                        </Col>
+            <Content>
+                <FormCard>
+                    <SectionHead><FiUserPlus /><h3>Dados do Cliente</h3></SectionHead>
+                    <FormBody>
+                        <StyledForm form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ tipoCliente: 'PESSOA_FISICA' }}>
+                            <Row gutter={[16, 0]}>
+                                <Col xs={24}>
+                                    <Form.Item name="nomeCompleto" label="Nome Completo" rules={[{ required: true, message: 'Obrigatório' }, { min: 2 }]}>
+                                        <Input placeholder="Nome completo do cliente" maxLength={100} />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item name="tipoCliente" label="Tipo de Cliente" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Select placeholder="Selecione...">
+                                            <Select.Option value="PESSOA_FISICA">Pessoa Física</Select.Option>
+                                            <Select.Option value="PESSOA_JURIDICA">Pessoa Jurídica</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item name="cpfCnpj" label="CPF / CNPJ" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="000.000.000-00" onChange={e => form.setFieldsValue({ cpfCnpj: formatCPF_CNPJ(e.target.value) })} />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item name="telefonePrincipal" label="Telefone Principal" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="(00) 00000-0000" onChange={e => form.setFieldsValue({ telefonePrincipal: formatPhone(e.target.value) })} />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item name="telefoneAdicional" label="Telefone Adicional">
+                                        <Input placeholder="(00) 00000-0000" onChange={e => form.setFieldsValue({ telefoneAdicional: formatPhone(e.target.value) })} />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24}>
+                                    <Form.Item name="email" label="E-mail" rules={[{ required: true, message: 'Obrigatório' }, { type: 'email', message: 'E-mail inválido' }]}>
+                                        <Input placeholder="email@exemplo.com" type="email" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </StyledForm>
+                    </FormBody>
 
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                name="tipoCliente"
-                                label={
-                                    <Space>
-                                        <IdcardOutlined />
-                                        <span>Tipo de Cliente</span>
-                                    </Space>
-                                }
-                                rules={[{ required: true, message: 'Por favor, selecione o tipo de cliente!' }]}
-                            >
-                                <Select placeholder="Selecione o tipo de cliente...">
-                                    <Select.Option value="PESSOA_FISICA">Pessoa Física</Select.Option>
-                                    <Select.Option value="PESSOA_JURIDICA">Pessoa Jurídica</Select.Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                name="cpfCnpj"
-                                label={
-                                    <Space>
-                                        <IdcardOutlined />
-                                        <span>CPF/CNPJ</span>
-                                    </Space>
-                                }
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o CPF ou CNPJ!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                                    onChange={(e) => {
-                                        const formatted = formatCPF_CNPJ(e.target.value);
-                                        form.setFieldsValue({ cpfCnpj: formatted });
-                                    }}
-                                />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                name="telefonePrincipal"
-                                label={
-                                    <Space>
-                                        <PhoneOutlined />
-                                        <span>Telefone Principal</span>
-                                    </Space>
-                                }
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o telefone principal!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="(00) 00000-0000"
-                                    onChange={(e) => {
-                                        const formatted = formatPhone(e.target.value);
-                                        form.setFieldsValue({ telefonePrincipal: formatted });
-                                    }}
-                                />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                name="telefoneAdicional"
-                                label={
-                                    <Space>
-                                        <PhoneOutlined />
-                                        <span>Telefone Adicional</span>
-                                    </Space>
-                                }
-                            >
-                                <Input
-                                    placeholder="(00) 00000-0000"
-                                    onChange={(e) => {
-                                        const formatted = formatPhone(e.target.value);
-                                        form.setFieldsValue({ telefoneAdicional: formatted });
-                                    }}
-                                />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24}>
-                            <Form.Item
-                                name="email"
-                                label={
-                                    <Space>
-                                        <MailOutlined />
-                                        <span>Email</span>
-                                    </Space>
-                                }
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o email!' },
-                                    { type: 'email', message: 'Por favor, insira um email válido!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="Digite o email do cliente..."
-                                    type="email"
-                                />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24}>
-                            <SectionTitle>
-                                <HomeOutlined />
-                                <span>Endereço</span>
-                            </SectionTitle>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="cep"
-                                label="CEP"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o CEP!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="00000-000"
-                                    suffix={isLoadingCEP ? <Spin size="small" /> : null}
-                                    onChange={handleCEPChange}
-                                />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={16}>
-                            <Form.Item
-                                name="rua"
-                                label="Rua"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira a rua!' }
-                                ]}
-                            >
-                                <Input placeholder="Digite o nome da rua..." />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="numero"
-                                label="Número"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o número!' }
-                                ]}
-                            >
-                                <Input placeholder="Digite o número..." />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={16}>
-                            <Form.Item
-                                name="complemento"
-                                label="Complemento"
-                            >
-                                <Input placeholder="Digite o complemento (opcional)..." />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="bairro"
-                                label="Bairro"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o bairro!' }
-                                ]}
-                            >
-                                <Input placeholder="Digite o bairro..." />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="cidade"
-                                label="Cidade"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira a cidade!' }
-                                ]}
-                            >
-                                <Input placeholder="Digite a cidade..." />
-                            </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="estado"
-                                label="Estado (UF)"
-                                rules={[
-                                    { required: true, message: 'Por favor, insira o estado!' },
-                                    { max: 2, message: 'O estado deve ter no máximo 2 caracteres!' }
-                                ]}
-                            >
-                                <Input
-                                    placeholder="Ex: SP, RJ, MG..."
-                                    maxLength={2}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </StyledForm>
-            </StyledCard>
-        </PageContainer>
+                    <SectionHead><FiMapPin /><h3>Endereço</h3></SectionHead>
+                    <FormBody>
+                        <StyledForm form={form} layout="vertical" onFinish={handleSubmit} component={false}>
+                            <Row gutter={[16, 0]}>
+                                <Col xs={24} md={8}>
+                                    <Form.Item name="cep" label="CEP" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="00000-000" suffix={isLoadingCEP ? <Spin size="small" /> : null} onChange={handleCEPChange} />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={16}>
+                                    <Form.Item name="rua" label="Rua" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="Nome da rua" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item name="numero" label="Número" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="Nº" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={16}>
+                                    <Form.Item name="complemento" label="Complemento">
+                                        <Input placeholder="Apto, bloco..." />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item name="bairro" label="Bairro" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="Bairro" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item name="cidade" label="Cidade" rules={[{ required: true, message: 'Obrigatório' }]}>
+                                        <Input placeholder="Cidade" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item name="estado" label="Estado (UF)" rules={[{ required: true, message: 'Obrigatório' }, { max: 2 }]}>
+                                        <Input placeholder="UF" maxLength={2} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </StyledForm>
+                    </FormBody>
+                </FormCard>
+            </Content>
+        </Page>
     );
 }
 
-export default ClienteCreate; 
+export default ClienteCreate;

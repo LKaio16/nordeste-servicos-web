@@ -1,225 +1,595 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import {
-    PlusOutlined,
-    ReloadOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    UserOutlined,
-    EyeOutlined,
-    MailOutlined,
-    PhoneOutlined,
-    DownloadOutlined,
-    SearchOutlined
-} from '@ant-design/icons';
+    FiPlus,
+    FiRefreshCw,
+    FiEdit2,
+    FiTrash2,
+    FiEye,
+    FiSearch,
+    FiDownload,
+    FiPhone,
+    FiMail,
+    FiUser,
+    FiUsers,
+    FiChevronLeft,
+    FiChevronRight,
+    FiX,
+    FiAlertCircle,
+} from 'react-icons/fi';
 import * as clienteService from '../../services/clienteService';
-import {
-    Card,
-    Button,
-    Typography,
-    Space,
-    message,
-    Spin,
-    Table,
-    Popconfirm,
-    Tooltip,
-    Avatar,
-    Input
-} from 'antd';
+import { message } from 'antd';
 
-const { Title, Text } = Typography;
-
-// Styled Components
-const PageContainer = styled.div`
-  padding: 0 24px 24px 24px;
-  background: #f8f9fa;
-  min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
 `;
 
-const StyledCard = styled(Card)`
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 82, 155, 0.1);
-  border: none;
-  overflow: hidden;
-  
-  .ant-card-head {
-    background: linear-gradient(135deg, #00529b 0%, #003d73 100%);
-    border-bottom: none;
-    
-    .ant-card-head-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-  }
-  
-  .ant-card-body {
-    padding: 24px;
-  }
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 `;
 
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  color: #333;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
 `;
 
-const TitleStyled = styled(Title)`
-  color: #00529b !important;
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 28px !important;
+const spin = keyframes`
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 `;
 
-const ActionButtons = styled(Space)`
-  .ant-btn {
-    border-radius: 8px;
-    font-weight: 500;
-    height: 40px;
-    padding: 0 20px;
-    
-    &.ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
-      border: none;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-      
-      &:hover {
-        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
-      }
-    }
-    
-    &.ant-btn-default {
-      background: white;
-      border: 1px solid #d9d9d9;
-      color: #333;
-      
-      &:hover {
-        background: #f5f5f5;
-        border-color: #00529b;
-        color: #00529b;
-      }
-    }
-  }
+const RefreshCwIcon = styled(FiRefreshCw)`
+    ${(p) =>
+        p.$spinning &&
+        css`
+            animation: ${spin} 0.8s linear infinite;
+        `}
 `;
 
-const StyledTable = styled(Table)`
-  .ant-table {
-    border-radius: 12px;
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
+`;
+
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 36px 36px 80px;
+    position: relative;
     overflow: hidden;
-  }
-  
-  .ant-table-thead > tr > th {
-    background: #fff;
-    border-bottom: 2px solid #00529b;
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    @media (max-width: 768px) {
+        margin: -16px -16px 0;
+        padding: 24px 20px 70px;
+    }
+`;
+
+const HeroInner = styled.div`
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+`;
+
+const HeroLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+    }
+`;
+
+const HeroIcon = styled.div`
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+`;
+
+const HeroCount = styled.span`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    font-size: 13px;
     font-weight: 600;
-    color: #00529b;
-    padding: 16px 12px;
-  }
-  
-  .ant-table-tbody > tr {
-    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.9);
+`;
+
+const HeroActions = styled.div`
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+`;
+
+const Btn = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 10px;
     cursor: pointer;
-    
-    &:hover {
-      background: linear-gradient(135deg, #f8f9ff 0%, #e6f7ff 100%);
-      transform: translateY(-1px);
-    }
-  }
-  
-  .ant-table-tbody > tr > td {
-    padding: 16px 12px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  
-  .ant-table-tbody > tr:last-child > td {
-    border-bottom: none;
-  }
+    transition: all 0.2s;
+    border: none;
+    white-space: nowrap;
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    svg { width: 16px; height: 16px; }
 `;
 
-const ActionButton = styled(Button)`
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  
-  &.ant-btn-primary {
-    background: #00529b;
-    border-color: #00529b;
-    
-    &:hover {
-      background: #0066cc;
-      border-color: #0066cc;
-      transform: translateY(-1px);
+const PrimaryBtn = styled(Btn)`
+    background: #fff;
+    color: #1a4494;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    &:hover:not(:disabled) {
+        background: #f0f7ff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
     }
-  }
-  
-  &.ant-btn-default {
-    border-color: #d9d9d9;
-    
-    &:hover {
-      border-color: #00529b;
-      color: #00529b;
-    }
-  }
-  
-  &.ant-btn-dangerous {
-    border-color: #ff4d4f;
-    color: #ff4d4f;
-    
-    &:hover {
-      background: #ff4d4f;
-      border-color: #ff4d4f;
-      color: white;
-    }
-  }
 `;
 
-const ClientInfo = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  
-  .ant-avatar {
-    flex-shrink: 0;
-  }
-  
-  .client-name {
-    color: #00529b;
-    font-weight: 600;
-    font-size: 16px;
-  }
+const GhostBtn = styled(Btn)`
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
 `;
 
-const ContactInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  
-  .email {
-    color: #666;
-    font-size: 14px;
+const Content = styled.div`
+    margin-top: -48px;
+    position: relative;
+    z-index: 2;
+`;
+
+const SearchPanel = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(12, 45, 107, 0.1);
+    border: 1px solid rgba(26, 68, 148, 0.06);
     display: flex;
     align-items: center;
     gap: 12px;
-  }
-  
-  .phone {
-    color: #00529b;
-    font-weight: 500;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    animation: ${fadeUp} 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+
+    @media (max-width: 600px) {
+        flex-direction: column;
+        align-items: stretch;
     }
 `;
 
+const SearchInput = styled.div`
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f4f7fb;
+    border: 1.5px solid #eef2f9;
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus-within {
+        border-color: #1a4494;
+        box-shadow: 0 0 0 3px rgba(26, 68, 148, 0.1);
+        background: #fff;
+    }
+
+    svg { color: #6b86b8; flex-shrink: 0; width: 18px; height: 18px; }
+
+    input {
+        flex: 1;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 14px;
+        font-family: inherit;
+        color: #0c2d6b;
+
+        &::placeholder { color: #a8b8d0; }
+    }
+`;
+
+const ClearBtn = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #dde4f0;
+    color: #6b86b8;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+
+    &:hover { background: #1a4494; color: #fff; }
+
+    svg { width: 14px; height: 14px; }
+`;
+
+const SearchBtn = styled(Btn)`
+    background: #1a4494;
+    color: #fff;
+    padding: 11px 24px;
+
+    &:hover:not(:disabled) {
+        background: #0c2d6b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(12, 45, 107, 0.25);
+    }
+`;
+
+const TableWrapper = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(12, 45, 107, 0.06);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    overflow: hidden;
+    animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+`;
+
+const THead = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 200px 160px;
+    padding: 0 24px;
+    background: #f8faff;
+    border-bottom: 2px solid #eef2f9;
+
+    @media (max-width: 768px) {
+        display: none;
+    }
+`;
+
+const TH = styled.div`
+    padding: 14px 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b86b8;
+`;
+
+const TBody = styled.div``;
+
+const TRow = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 200px 160px;
+    padding: 0 24px;
+    align-items: center;
+    border-bottom: 1px solid #f5f8fd;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:last-child { border-bottom: none; }
+
+    &:hover {
+        background: #f8faff;
+    }
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        padding: 16px 20px;
+        gap: 12px;
+    }
+`;
+
+const TD = styled.div`
+    padding: 16px 0;
+
+    @media (max-width: 768px) {
+        padding: 0;
+    }
+`;
+
+const ClientCell = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+`;
+
+const ClientAvatar = styled.div`
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1a4494, #2b6fc2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+`;
+
+const ClientDetails = styled.div``;
+
+const ClientName = styled.div`
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c2d6b;
+    margin-bottom: 3px;
+`;
+
+const ClientEmail = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b86b8;
+
+    svg { width: 13px; height: 13px; }
+`;
+
+const PhoneCell = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+
+    svg { color: #1a4494; width: 15px; height: 15px; }
+`;
+
+const ActionsCell = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+
+    @media (max-width: 768px) {
+        justify-content: flex-start;
+    }
+`;
+
+const ActionBtn = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #eef2f9;
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    color: ${p => p.$color || '#6b86b8'};
+    transition: all 0.15s;
+    position: relative;
+
+    &:hover {
+        background: ${p => p.$hoverBg || '#f0f4fa'};
+        border-color: ${p => p.$hoverBorder || '#d6e0f0'};
+        color: ${p => p.$hoverColor || '#1a4494'};
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    svg { width: 15px; height: 15px; }
+`;
+
+const DeleteBtn = styled(ActionBtn)`
+    &:hover {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #dc2626;
+    }
+`;
+
+const Pagination = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid #f5f8fd;
+    flex-wrap: wrap;
+    gap: 12px;
+`;
+
+const PagInfo = styled.span`
+    font-size: 13px;
+    color: #6b86b8;
+    font-weight: 500;
+`;
+
+const PagControls = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+`;
+
+const PagBtn = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid ${p => p.$active ? '#1a4494' : '#eef2f9'};
+    background: ${p => p.$active ? '#1a4494' : '#fff'};
+    color: ${p => p.$active ? '#fff' : '#6b86b8'};
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+        border-color: #1a4494;
+        color: ${p => p.$active ? '#fff' : '#1a4494'};
+        background: ${p => p.$active ? '#0c2d6b' : '#f0f4fa'};
+    }
+
+    &:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    svg { width: 16px; height: 16px; }
+`;
+
+const PerPageSelect = styled.select`
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid #eef2f9;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b86b8;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+    margin-left: 8px;
+
+    &:focus { border-color: #1a4494; }
+`;
+
+const EmptyState = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    color: #6b86b8;
+    gap: 12px;
+
+    svg { width: 48px; height: 48px; opacity: 0.4; }
+
+    p { font-size: 15px; font-weight: 500; margin: 0; }
+`;
+
+const LoadingOverlay = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+
+    svg {
+        width: 28px;
+        height: 28px;
+        color: #1a4494;
+        animation: ${spin} 0.8s linear infinite;
+    }
+`;
+
+const ConfirmOverlay = styled.div`
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10, 30, 61, 0.5);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ${fadeIn} 0.15s ease;
+`;
+
+const ConfirmBox = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    text-align: center;
+
+    h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0c2d6b;
+    }
+
+    p {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: #6b86b8;
+        line-height: 1.5;
+    }
+`;
+
+const ConfirmActions = styled.div`
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+`;
+
+const ConfirmBtn = styled(Btn)`
+    padding: 10px 24px;
+    font-size: 14px;
+`;
+
+const CancelConfirmBtn = styled(ConfirmBtn)`
+    background: #f4f7fb;
+    color: #6b86b8;
+    &:hover { background: #eef2f9; color: #0c2d6b; }
+`;
+
+const DeleteConfirmBtn = styled(ConfirmBtn)`
+    background: #dc2626;
+    color: #fff;
+    &:hover:not(:disabled) { background: #b91c1c; }
+`;
+
+const MobileLabel = styled.span`
+    display: none;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #a8b8d0;
+    margin-bottom: 4px;
+
+    @media (max-width: 768px) {
+        display: block;
+    }
+`;
 
 const Clientes = () => {
     const navigate = useNavigate();
@@ -228,6 +598,9 @@ const Clientes = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [busca, setBusca] = useState('');
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     const fetchClientes = useCallback(async () => {
         try {
@@ -236,18 +609,16 @@ const Clientes = () => {
             setClientes(data);
         } catch (err) {
             console.error('Erro ao buscar clientes:', err);
-            message.destroy();
-            message.error({ content: err.message || 'Não foi possível carregar a lista de clientes.', duration: 6 });
+            message.error(err.message || 'Não foi possível carregar a lista de clientes.');
         }
     }, [busca]);
 
     useEffect(() => {
-        const loadData = async () => {
+        (async () => {
             setIsLoading(true);
             await fetchClientes();
             setIsLoading(false);
-        }
-        loadData();
+        })();
     }, [fetchClientes]);
 
     const handleRefresh = async () => {
@@ -256,236 +627,267 @@ const Clientes = () => {
         setIsRefreshing(false);
     };
 
-    const handleRowClick = (record) => {
-        navigate(`/admin/clientes/detalhes/${record.id}`);
+    const handleSearch = () => {
+        setPage(1);
+        setIsLoading(true);
+        fetchClientes().finally(() => setIsLoading(false));
     };
 
-    const handleEdit = (id) => {
-        navigate(`/admin/clientes/editar/${id}`);
-    };
-
-    const handleDelete = async (id) => {
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await clienteService.deleteCliente(id);
-            setClientes(prev => prev.filter(c => c.id !== id));
+            await clienteService.deleteCliente(deleteTarget.id);
+            setClientes(prev => prev.filter(c => c.id !== deleteTarget.id));
             message.success('Cliente excluído com sucesso!');
         } catch (err) {
-            console.error('Erro ao deletar cliente:', err);
-            message.destroy();
-            message.error({ content: err.message || 'Falha ao excluir o cliente. Verifique se ele não está associado a equipamentos ou ordens de serviço.', duration: 6 });
+            message.error(err.message || 'Falha ao excluir o cliente.');
         }
+        setDeleteTarget(null);
     };
 
     const handleDownloadExcel = async () => {
         setIsDownloading(true);
         try {
             const blob = await clienteService.downloadClientesExcel();
-
-            // Criar URL para o blob
             const url = window.URL.createObjectURL(blob);
-
-            // Criar elemento de link temporário para download
             const link = document.createElement('a');
             link.href = url;
             link.download = 'clientes.xlsx';
             document.body.appendChild(link);
             link.click();
-
-            // Limpar
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-
             message.success('Arquivo Excel baixado com sucesso!');
         } catch (err) {
-            console.error('Erro ao baixar Excel:', err);
-            message.destroy();
-            message.error({ content: err.message || 'Falha ao baixar o arquivo Excel.', duration: 6 });
+            message.error(err.message || 'Falha ao baixar o arquivo Excel.');
         } finally {
             setIsDownloading(false);
         }
     };
 
-    // Definição das colunas da tabela
-    const columns = [
-        {
-            title: 'Cliente',
-            key: 'cliente',
-            render: (_, record) => (
-                <ClientInfo>
-                    <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: '#00529b' }} />
-                    <div>
-                        <div className="client-name">{record.nomeCompleto}</div>
-                        {record.email && (
-                            <div className="email">
-                                <Space size="small">
-                                    <MailOutlined />
-                                    {record.email}
-                                </Space>
-                            </div>
-                        )}
-                    </div>
-                </ClientInfo>
-            ),
-        },
-        {
-            title: 'Contato',
-            dataIndex: 'telefonePrincipal',
-            key: 'contato',
-            render: (telefone) => (
-                <ContactInfo>
-                    {telefone && (
-                        <div className="phone">
-                            <Space size="small">
-                                <PhoneOutlined />
-                                {telefone}
-                            </Space>
-                        </div>
-                    )}
-                </ContactInfo>
-            ),
-        },
-        {
-            title: 'Ações',
-            key: 'actions',
-            width: 120,
-            render: (_, record) => (
-                <Space size="small" onClick={(e) => e.stopPropagation()}>
-                    <Tooltip title="Ver detalhes">
-                        <ActionButton
-                            type="primary"
-                            size="small"
-                            icon={<EyeOutlined />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleRowClick(record);
-                            }}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Editar">
-                        <ActionButton
-                            type="default"
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(record.id);
-                            }}
-                        />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Excluir Cliente"
-                        description={`Deseja realmente excluir o cliente "${record.nomeCompleto}"?`}
-                        onConfirm={(e) => {
-                            e?.stopPropagation();
-                            handleDelete(record.id);
-                        }}
-                        okText="Sim"
-                        cancelText="Não"
-                        okType="danger"
-                    >
-                        <Tooltip title="Excluir">
-                            <ActionButton
-                                type="default"
-                                danger
-                                size="small"
-                                icon={<DeleteOutlined />}
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                        </Tooltip>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-    ];
+    const totalPages = Math.ceil(clientes.length / perPage);
+    const paginatedClientes = useMemo(() => {
+        const start = (page - 1) * perPage;
+        return clientes.slice(start, start + perPage);
+    }, [clientes, page, perPage]);
+
+    const startItem = clientes.length > 0 ? (page - 1) * perPage + 1 : 0;
+    const endItem = Math.min(page * perPage, clientes.length);
+
+    const pageNumbers = useMemo(() => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, page - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+    }, [page, totalPages]);
+
+    useEffect(() => {
+        if (page > totalPages && totalPages > 0) setPage(totalPages);
+    }, [totalPages, page]);
+
+    const getInitials = (name) => {
+        if (!name) return '?';
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) return parts[0][0]?.toUpperCase() || '?';
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
 
     return (
-        <PageContainer>
-            <HeaderContainer>
-                <TitleStyled level={2}>
-                    <Space>
-                        <UserOutlined />
-                        <span>Clientes</span>
-                    </Space>
-                </TitleStyled>
-                <ActionButtons>
-                    <Button
-                        icon={<ReloadOutlined />}
-                        onClick={handleRefresh}
-                        loading={isRefreshing}
-                    >
-                        Atualizar
-                    </Button>
-                    <Button
-                        icon={<DownloadOutlined />}
-                        onClick={handleDownloadExcel}
-                        loading={isDownloading}
-                    >
-                        Exportar Excel
-                    </Button>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => navigate('/admin/clientes/novo')}
-                    >
-                        Novo Cliente
-                    </Button>
-                </ActionButtons>
-            </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <HeroIcon><FiUsers /></HeroIcon>
+                        <h1>
+                            Clientes
+                            {!isLoading && (
+                                <HeroCount>{clientes.length}</HeroCount>
+                            )}
+                        </h1>
+                    </HeroLeft>
+                    <HeroActions>
+                        <GhostBtn onClick={handleRefresh} disabled={isRefreshing}>
+                            <RefreshCwIcon $spinning={isRefreshing} />
+                            Atualizar
+                        </GhostBtn>
+                        <GhostBtn onClick={handleDownloadExcel} disabled={isDownloading}>
+                            <FiDownload />
+                            Exportar
+                        </GhostBtn>
+                        <PrimaryBtn onClick={() => navigate('/admin/clientes/novo')}>
+                            <FiPlus />
+                            Novo Cliente
+                        </PrimaryBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-            <StyledCard>
-                <Space style={{ marginBottom: 20 }} wrap>
-                    <Input
-                        placeholder="Buscar por nome, CPF/CNPJ ou e-mail"
-                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                        value={busca}
-                        onChange={(e) => setBusca(e.target.value)}
-                        onPressEnter={() => {
-                            setIsLoading(true);
-                            fetchClientes().finally(() => setIsLoading(false));
-                        }}
-                        allowClear
-                        style={{ width: 320 }}
-                    />
-                    <Button
-                        type="primary"
-                        icon={<SearchOutlined />}
-                        onClick={() => {
-                            setIsLoading(true);
-                            fetchClientes().finally(() => setIsLoading(false));
-                        }}
-                    >
-                        Buscar
-                    </Button>
-                    {busca.trim() && (
-                        <Button onClick={() => setBusca('')}>
-                            Limpar busca
-                        </Button>
+            <Content>
+                <SearchPanel>
+                    <SearchInput>
+                        <FiSearch />
+                        <input
+                            placeholder="Buscar por nome, CPF/CNPJ ou e-mail..."
+                            value={busca}
+                            onChange={(e) => setBusca(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        {busca && (
+                            <ClearBtn onClick={() => { setBusca(''); }}>
+                                <FiX />
+                            </ClearBtn>
+                        )}
+                    </SearchInput>
+                    <SearchBtn onClick={handleSearch}>
+                        <FiSearch /> Buscar
+                    </SearchBtn>
+                </SearchPanel>
+
+                <TableWrapper>
+                    {isLoading ? (
+                        <LoadingOverlay>
+                            <FiRefreshCw />
+                        </LoadingOverlay>
+                    ) : clientes.length === 0 ? (
+                        <EmptyState>
+                            <FiUsers />
+                            <p>Nenhum cliente encontrado</p>
+                        </EmptyState>
+                    ) : (
+                        <>
+                            <THead>
+                                <TH>Cliente</TH>
+                                <TH>Contato</TH>
+                                <TH style={{ textAlign: 'right' }}>Ações</TH>
+                            </THead>
+                            <TBody>
+                                {paginatedClientes.map((cliente) => (
+                                    <TRow
+                                        key={cliente.id}
+                                        onClick={() => navigate(`/admin/clientes/detalhes/${cliente.id}`)}
+                                    >
+                                        <TD>
+                                            <MobileLabel>Cliente</MobileLabel>
+                                            <ClientCell>
+                                                <ClientAvatar>
+                                                    {getInitials(cliente.nomeCompleto)}
+                                                </ClientAvatar>
+                                                <ClientDetails>
+                                                    <ClientName>{cliente.nomeCompleto}</ClientName>
+                                                    {cliente.email && (
+                                                        <ClientEmail>
+                                                            <FiMail /> {cliente.email}
+                                                        </ClientEmail>
+                                                    )}
+                                                </ClientDetails>
+                                            </ClientCell>
+                                        </TD>
+                                        <TD>
+                                            <MobileLabel>Contato</MobileLabel>
+                                            {cliente.telefonePrincipal ? (
+                                                <PhoneCell>
+                                                    <FiPhone /> {cliente.telefonePrincipal}
+                                                </PhoneCell>
+                                            ) : (
+                                                <span style={{ color: '#a8b8d0', fontSize: 13 }}>—</span>
+                                            )}
+                                        </TD>
+                                        <TD>
+                                            <ActionsCell onClick={(e) => e.stopPropagation()}>
+                                                <ActionBtn
+                                                    title="Ver detalhes"
+                                                    onClick={() => navigate(`/admin/clientes/detalhes/${cliente.id}`)}
+                                                >
+                                                    <FiEye />
+                                                </ActionBtn>
+                                                <ActionBtn
+                                                    title="Editar"
+                                                    onClick={() => navigate(`/admin/clientes/editar/${cliente.id}`)}
+                                                >
+                                                    <FiEdit2 />
+                                                </ActionBtn>
+                                                <DeleteBtn
+                                                    title="Excluir"
+                                                    onClick={() => setDeleteTarget(cliente)}
+                                                >
+                                                    <FiTrash2 />
+                                                </DeleteBtn>
+                                            </ActionsCell>
+                                        </TD>
+                                    </TRow>
+                                ))}
+                            </TBody>
+
+                            <Pagination>
+                                <PagInfo>
+                                    {startItem}–{endItem} de {clientes.length} clientes
+                                </PagInfo>
+                                <PagControls>
+                                    <PagBtn
+                                        disabled={page === 1}
+                                        onClick={() => setPage(p => p - 1)}
+                                    >
+                                        <FiChevronLeft />
+                                    </PagBtn>
+                                    {pageNumbers.map(n => (
+                                        <PagBtn
+                                            key={n}
+                                            $active={n === page}
+                                            onClick={() => setPage(n)}
+                                        >
+                                            {n}
+                                        </PagBtn>
+                                    ))}
+                                    <PagBtn
+                                        disabled={page === totalPages || totalPages === 0}
+                                        onClick={() => setPage(p => p + 1)}
+                                    >
+                                        <FiChevronRight />
+                                    </PagBtn>
+                                    <PerPageSelect
+                                        value={perPage}
+                                        onChange={(e) => {
+                                            setPerPage(Number(e.target.value));
+                                            setPage(1);
+                                        }}
+                                    >
+                                        <option value={10}>10 / pág</option>
+                                        <option value={20}>20 / pág</option>
+                                        <option value={50}>50 / pág</option>
+                                        <option value={100}>100 / pág</option>
+                                    </PerPageSelect>
+                                </PagControls>
+                            </Pagination>
+                        </>
                     )}
-                </Space>
-                <StyledTable
-                    columns={columns}
-                    dataSource={clientes}
-                    rowKey="id"
-                    loading={isLoading}
-                    onRow={(record) => ({
-                        onClick: () => handleRowClick(record),
-                        style: { cursor: 'pointer' }
-                    })}
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} de ${total} clientes`,
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                    }}
-                    locale={{
-                        emptyText: 'Nenhum cliente encontrado',
-                    }}
-                />
-            </StyledCard>
-        </PageContainer>
+                </TableWrapper>
+            </Content>
+
+            {deleteTarget && (
+                <ConfirmOverlay onClick={() => setDeleteTarget(null)}>
+                    <ConfirmBox onClick={(e) => e.stopPropagation()}>
+                        <FiAlertCircle style={{ width: 40, height: 40, color: '#dc2626', marginBottom: 12 }} />
+                        <h3>Excluir cliente?</h3>
+                        <p>
+                            Tem certeza que deseja excluir <strong>{deleteTarget.nomeCompleto}</strong>?
+                            Esta ação não pode ser desfeita.
+                        </p>
+                        <ConfirmActions>
+                            <CancelConfirmBtn onClick={() => setDeleteTarget(null)}>
+                                Cancelar
+                            </CancelConfirmBtn>
+                            <DeleteConfirmBtn onClick={handleDelete}>
+                                <FiTrash2 /> Excluir
+                            </DeleteConfirmBtn>
+                        </ConfirmActions>
+                    </ConfirmBox>
+                </ConfirmOverlay>
+            )}
+        </Page>
     );
 };
 
-export default Clientes; 
+export default Clientes;

@@ -1,161 +1,163 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
 import {
-    ArrowLeftOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    ToolOutlined,
-    UserOutlined,
-    InfoCircleOutlined
-} from '@ant-design/icons';
+    FiArrowLeft, FiEdit2, FiTrash2, FiTool, FiUser,
+    FiAlertCircle, FiFileText, FiClock
+} from 'react-icons/fi';
 import * as equipamentoService from '../../services/equipamentoService';
 import * as clienteService from '../../services/clienteService';
-import {
-    Card,
-    Button,
-    Typography,
-    Space,
-    message,
-    Spin,
-    Row,
-    Col,
-    Divider,
-    Descriptions,
-    Popconfirm
-} from 'antd';
-import styled from 'styled-components';
+import { message, Spin } from 'antd';
 
-const { Title, Text } = Typography;
-
-// Styled Components
-const PageContainer = styled.div`
-    padding: 0 24px 24px 24px;
-    background-color: #f5f5f5;
-    min-height: 100vh;
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const slideDown = keyframes`
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
 `;
 
-const StyledCard = styled(Card)`
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: none;
-    margin-bottom: 24px;
-    
-    .ant-card-body {
-        padding: 32px;
-    }
+const Page = styled.div`
+    padding-bottom: 32px;
+    animation: ${fadeIn} 0.3s ease both;
 `;
 
-const HeaderContainer = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #f0f0f0;
+const Hero = styled.div`
+    background: linear-gradient(145deg, #0c2d6b 0%, #1a4494 40%, #1e5bb5 70%, #2b6fc2 100%);
+    margin: -24px -32px 0;
+    padding: 32px 36px 72px;
+    position: relative;
+    overflow: hidden;
+    animation: ${slideDown} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    &::before { content:''; position:absolute; top:-80px; right:-40px; width:400px; height:400px; border-radius:50%; background:rgba(255,255,255,0.04); }
+    @media (max-width: 768px) { margin: -16px -16px 0; padding: 24px 20px 64px; }
 `;
 
-const TitleContainer = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 16px;
+const HeroInner = styled.div`
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 `;
 
-const TitleStyled = styled(Title)`
-    color: #00529b !important;
-    margin: 0 !important;
-    font-size: 28px !important;
-    font-weight: 700 !important;
+const HeroLeft = styled.div`
+    display: flex; align-items: center; gap: 16px;
 `;
 
-const ActionButtons = styled(Space)`
-    .ant-btn {
-        height: 40px;
-        padding: 0 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        
-        &.ant-btn-primary {
-            background: linear-gradient(135deg, #00529b 0%, #0066cc 100%);
-            border: none;
-            box-shadow: 0 2px 8px rgba(0, 82, 155, 0.3);
-            
-            &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 82, 155, 0.4);
-            }
-        }
-        
-        &.ant-btn-default {
-            border: 2px solid #d9d9d9;
-            color: #666;
-            
-            &:hover {
-                border-color: #00529b;
-                color: #00529b;
-            }
-        }
-        
-        &.ant-btn-dangerous {
-            border-color: #ff4d4f;
-            color: #ff4d4f;
-            
-            &:hover {
-                background: #ff4d4f;
-                border-color: #ff4d4f;
-                color: white;
-            }
-        }
-    }
+const BackBtn = styled.button`
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+    &:hover { background: rgba(255,255,255,0.2); }
+    svg { width: 18px; height: 18px; }
 `;
 
-const LoadingContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    
-    .ant-spin {
-        margin-bottom: 16px;
-    }
-    
-    .loading-text {
-        color: #00529b;
-        font-size: 18px;
-        font-weight: 600;
-    }
+const HeroInfo = styled.div`
+    h1 { margin: 0; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    p { margin: 4px 0 0; font-size: 14px; color: rgba(255,255,255,0.65); }
 `;
 
-const SectionTitle = styled(Title)`
-    color: #00529b !important;
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    margin-bottom: 20px !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+const HeroActions = styled.div`
+    display: flex; gap: 10px; flex-wrap: wrap;
+    animation: ${fadeUp} 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 `;
 
-const InfoCard = styled.div`
-    background: linear-gradient(135deg, #f8f9ff 0%, #e6f7ff 100%);
-    border: 1px solid #d6e4ff;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    
-    .info-label {
-        color: #666;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 4px;
-    }
-    
-    .info-value {
-        color: #00529b;
-        font-size: 16px;
-        font-weight: 600;
-    }
+const Btn = styled.button`
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; font-size: 13px; font-weight: 600; font-family: inherit;
+    border-radius: 10px; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap;
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    svg { width: 16px; height: 16px; }
+`;
+
+const PrimaryBtn = styled(Btn)`
+    background: #fff; color: #1a4494;
+    &:hover { background: #f0f7ff; box-shadow: 0 4px 16px rgba(0,0,0,0.15); transform: translateY(-1px); }
+`;
+
+const DangerGhostBtn = styled(Btn)`
+    background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3);
+    &:hover { background: rgba(220,38,38,0.25); color: #fff; }
+`;
+
+const Content = styled.div`
+    margin-top: -44px; position: relative; z-index: 2;
+`;
+
+const Section = styled.div`
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(12,45,107,0.06); border: 1px solid rgba(26,68,148,0.06);
+    margin-bottom: 18px; overflow: hidden;
+    animation: ${fadeUp} 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: ${p => p.$d || '0.15s'};
+`;
+
+const SectionHeader = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 24px; border-bottom: 1px solid #eef2f9;
+    svg { width: 18px; height: 18px; color: #1a4494; }
+    h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0c2d6b; }
+`;
+
+const FieldsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(${p => p.$cols || 2}, 1fr);
+    gap: 0;
+    @media (max-width: 768px) { grid-template-columns: 1fr; }
+`;
+
+const Field = styled.div`
+    padding: 18px 24px;
+    border-bottom: 1px solid #f5f8fd;
+    border-right: 1px solid #f5f8fd;
+    &:last-child { border-bottom: none; }
+    @media (max-width: 768px) { border-right: none; }
+`;
+
+const FieldLabel = styled.div`
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: #6b86b8; margin-bottom: 6px;
+`;
+
+const FieldValue = styled.div`
+    font-size: 15px; font-weight: 600; color: #0c2d6b;
+    display: flex; align-items: center; gap: 8px;
+    ${p => p.$muted && 'color: #a8b8d0; font-weight: 400;'}
+`;
+
+const ObsText = styled.div`
+    padding: 18px 24px;
+    font-size: 14px; line-height: 1.7; color: #2d4a7a;
+    white-space: pre-wrap;
+`;
+
+const LoadWrap = styled.div`
+    display: flex; align-items: center; justify-content: center;
+    min-height: 40vh; gap: 16px;
+    .ant-spin-dot-item { background-color: #1a4494 !important; }
+`;
+
+const ConfirmOverlay = styled.div`
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10,30,61,0.5); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    animation: ${fadeIn} 0.15s ease;
+`;
+
+const ConfirmBox = styled.div`
+    background: #fff; border-radius: 16px; padding: 32px;
+    max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center;
+    h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #0c2d6b; }
+    p { margin: 0 0 24px; font-size: 14px; color: #6b86b8; line-height: 1.5; }
+`;
+
+const ConfirmActions = styled.div`
+    display: flex; gap: 10px; justify-content: center;
 `;
 
 function EquipamentoDetailPage() {
@@ -164,6 +166,7 @@ function EquipamentoDetailPage() {
     const [equipamento, setEquipamento] = useState(null);
     const [cliente, setCliente] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showDelete, setShowDelete] = useState(false);
 
     useEffect(() => {
         const fetchEquipamentoDetails = async () => {
@@ -194,154 +197,104 @@ function EquipamentoDetailPage() {
             message.success('Equipamento excluído com sucesso!');
             navigate('/admin/equipamentos');
         } catch (err) {
-            console.error('Erro ao deletar equipamento:', err);
-            message.error('Falha ao deletar equipamento.');
+            message.error(err.message || 'Falha ao excluir o equipamento.');
         }
+        setShowDelete(false);
     };
 
     if (isLoading) {
-        return (
-            <PageContainer>
-                <LoadingContainer>
-                    <Spin size="large" />
-                    <div className="loading-text">Carregando detalhes do equipamento...</div>
-                </LoadingContainer>
-            </PageContainer>
-        );
+        return <Page><Hero><HeroInner><HeroInfo><h1>Detalhes do Equipamento</h1></HeroInfo></HeroInner></Hero><Content><LoadWrap><Spin size="large" /></LoadWrap></Content></Page>;
     }
 
     if (!equipamento) {
-        return (
-            <PageContainer>
-                <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                    <Text style={{ fontSize: '18px', color: '#666' }}>Equipamento não encontrado</Text>
-                </div>
-            </PageContainer>
-        );
+        return <Page><Hero><HeroInner><HeroInfo><h1>Equipamento não encontrado</h1></HeroInfo></HeroInner></Hero></Page>;
     }
 
+    const val = (v) => v || '—';
+
     return (
-        <PageContainer>
-            <StyledCard>
-                <HeaderContainer>
-                    <TitleContainer>
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate(-1)}
-                            type="text"
-                            style={{ padding: '4px 8px' }}
-                        />
-                        <TitleStyled level={2}>
-                            <Space>
-                                <ToolOutlined />
-                                <span>Detalhes do Equipamento</span>
-                            </Space>
-                        </TitleStyled>
-                    </TitleContainer>
-                    <ActionButtons>
-                        <Button
-                            icon={<EditOutlined />}
-                            onClick={() => navigate(`/admin/equipamentos/editar/${id}`)}
-                        >
-                            Editar
-                        </Button>
-                        <Popconfirm
-                            title="Excluir Equipamento"
-                            description={`Deseja realmente excluir o equipamento "${equipamento.marcaModelo}"?`}
-                            onConfirm={handleDelete}
-                            okText="Sim"
-                            cancelText="Não"
-                            okType="danger"
-                        >
-                            <Button
-                                danger
-                                icon={<DeleteOutlined />}
-                            >
-                                Excluir
-                            </Button>
-                        </Popconfirm>
-                    </ActionButtons>
-                </HeaderContainer>
+        <Page>
+            <Hero>
+                <HeroInner>
+                    <HeroLeft>
+                        <BackBtn onClick={() => navigate(-1)}><FiArrowLeft /></BackBtn>
+                        <HeroInfo>
+                            <h1>{equipamento.marcaModelo}</h1>
+                            <p>{val(equipamento.tipo)} · {val(equipamento.numeroSerieChassi)}</p>
+                        </HeroInfo>
+                    </HeroLeft>
+                    <HeroActions>
+                        <PrimaryBtn onClick={() => navigate(`/admin/equipamentos/editar/${id}`)}>
+                            <FiEdit2 /> Editar
+                        </PrimaryBtn>
+                        <DangerGhostBtn onClick={() => setShowDelete(true)}>
+                            <FiTrash2 /> Excluir
+                        </DangerGhostBtn>
+                    </HeroActions>
+                </HeroInner>
+            </Hero>
 
-                <Row gutter={[24, 24]}>
-                    <Col xs={24} lg={12}>
-                        <StyledCard>
-                            <SectionTitle level={3}>
-                                <Space>
-                                    <ToolOutlined />
-                                    <span>Informações do Equipamento</span>
-                                </Space>
-                            </SectionTitle>
+            <Content>
+                <Section $d="0.1s">
+                    <SectionHeader><FiTool /><h3>Informações do Equipamento</h3></SectionHeader>
+                    <FieldsGrid $cols={2}>
+                        <Field>
+                            <FieldLabel>Tipo</FieldLabel>
+                            <FieldValue>{val(equipamento.tipo)}</FieldValue>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Marca / Modelo</FieldLabel>
+                            <FieldValue>{val(equipamento.marcaModelo)}</FieldValue>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Número de Série / Chassi</FieldLabel>
+                            <FieldValue $muted={!equipamento.numeroSerieChassi}>{val(equipamento.numeroSerieChassi)}</FieldValue>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Horímetro</FieldLabel>
+                            <FieldValue $muted={!equipamento.horimetro}>
+                                <FiClock style={{ width: 14, height: 14 }} />
+                                {equipamento.horimetro ? `${equipamento.horimetro} horas` : '—'}
+                            </FieldValue>
+                        </Field>
+                    </FieldsGrid>
+                </Section>
 
-                            <InfoCard>
-                                <div className="info-label">Tipo</div>
-                                <div className="info-value">{equipamento.tipo}</div>
-                            </InfoCard>
+                <Section $d="0.18s">
+                    <SectionHeader><FiUser /><h3>Cliente Proprietário</h3></SectionHeader>
+                    <FieldsGrid $cols={1}>
+                        <Field>
+                            <FieldLabel>Nome do Cliente</FieldLabel>
+                            <FieldValue $muted={!cliente}>
+                                {cliente ? cliente.nomeCompleto : 'Nenhum cliente vinculado'}
+                            </FieldValue>
+                        </Field>
+                    </FieldsGrid>
+                </Section>
 
-                            <InfoCard>
-                                <div className="info-label">Marca/Modelo</div>
-                                <div className="info-value">{equipamento.marcaModelo}</div>
-                            </InfoCard>
+                {equipamento.observacoes && (
+                    <Section $d="0.26s">
+                        <SectionHeader><FiFileText /><h3>Observações</h3></SectionHeader>
+                        <ObsText>{equipamento.observacoes}</ObsText>
+                    </Section>
+                )}
+            </Content>
 
-                            <InfoCard>
-                                <div className="info-label">Número de Série/Chassi</div>
-                                <div className="info-value">{equipamento.numeroSerieChassi || 'N/A'}</div>
-                            </InfoCard>
-
-                            {equipamento.horimetro && (
-                                <InfoCard>
-                                    <div className="info-label">Horímetro</div>
-                                    <div className="info-value">{equipamento.horimetro} horas</div>
-                                </InfoCard>
-                            )}
-                        </StyledCard>
-                    </Col>
-
-                    <Col xs={24} lg={12}>
-                        <StyledCard>
-                            <SectionTitle level={3}>
-                                <Space>
-                                    <UserOutlined />
-                                    <span>Cliente Proprietário</span>
-                                </Space>
-                            </SectionTitle>
-
-                            {cliente ? (
-                                <InfoCard>
-                                    <div className="info-label">Nome Completo</div>
-                                    <div className="info-value">{cliente.nomeCompleto}</div>
-                                </InfoCard>
-                            ) : (
-                                <InfoCard>
-                                    <div className="info-label">Cliente</div>
-                                    <div className="info-value" style={{ color: '#999' }}>Nenhum cliente vinculado</div>
-                                </InfoCard>
-                            )}
-                        </StyledCard>
-                    </Col>
-
-                    {equipamento.observacoes && (
-                        <Col xs={24}>
-                            <StyledCard>
-                                <SectionTitle level={3}>
-                                    <Space>
-                                        <InfoCircleOutlined />
-                                        <span>Observações</span>
-                                    </Space>
-                                </SectionTitle>
-
-                                <InfoCard>
-                                    <div className="info-value" style={{ lineHeight: '1.6' }}>
-                                        {equipamento.observacoes}
-                                    </div>
-                                </InfoCard>
-                            </StyledCard>
-                        </Col>
-                    )}
-                </Row>
-            </StyledCard>
-        </PageContainer>
+            {showDelete && (
+                <ConfirmOverlay onClick={() => setShowDelete(false)}>
+                    <ConfirmBox onClick={e => e.stopPropagation()}>
+                        <FiAlertCircle style={{ width: 40, height: 40, color: '#dc2626', marginBottom: 12 }} />
+                        <h3>Excluir equipamento?</h3>
+                        <p>Tem certeza que deseja excluir <strong>{equipamento.marcaModelo}</strong>? Esta ação não pode ser desfeita.</p>
+                        <ConfirmActions>
+                            <Btn style={{ background: '#f4f7fb', color: '#6b86b8' }} onClick={() => setShowDelete(false)}>Cancelar</Btn>
+                            <Btn style={{ background: '#dc2626', color: '#fff' }} onClick={handleDelete}><FiTrash2 /> Excluir</Btn>
+                        </ConfirmActions>
+                    </ConfirmBox>
+                </ConfirmOverlay>
+            )}
+        </Page>
     );
 }
 
-export default EquipamentoDetailPage; 
+export default EquipamentoDetailPage;

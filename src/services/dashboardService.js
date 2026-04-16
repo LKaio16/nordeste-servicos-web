@@ -1,55 +1,34 @@
 import api from './api';
-import { getAllOrdensServico } from './osService';
-import { getAllClientes } from './clienteService';
-import { getAllEquipamentos } from './equipamentoService';
-import { getAllUsuarios } from './usuarioService';
 
 
 const getDashboardStats = async () => {
     try {
-        // Usa endpoint de estatísticas para total e status das OS; busca ordens para recentes e técnicos
-        const [osStatsResponse, ordens, clientes, equipamentos, usuarios] = await Promise.all([
-            api.get('/api/ordens-servico/dashboard/stats'),
-            getAllOrdensServico('', 0, 100),
-            getAllClientes(),
-            getAllEquipamentos(),
-            getAllUsuarios()
-        ]);
+        const osStatsResponse = await api.get('/api/ordens-servico/dashboard/stats');
 
         const d = osStatsResponse.data;
-        const osStats = {
-            total: Number(d.totalOs ?? 0),
-            status: {
-                CONCLUIDA: Number(d.osConcluidas ?? 0),
-                EM_ANDAMENTO: Number(d.osEmAndamento ?? 0),
-                PENDENTE_PECAS: Number(d.osPendentes ?? 0),
-                EM_ABERTO: Number(d.osAbertas ?? 0)
-            },
-            recentes: ordens.slice(0, 5)
-        };
-
-        const clienteStats = {
-            total: clientes.length
-        };
-
-        const equipamentoStats = {
-            total: equipamentos.length
-        };
-
-        // Processa as estatísticas dos técnicos
-        const tecnicos = usuarios.filter(u => u.perfil === 'TECNICO');
-        const osPorTecnico = tecnicos.map(tecnico => ({
-            name: tecnico.nome.split(' ')[0], // Pega só o primeiro nome
-            "Ordens Atribuídas": ordens.filter(os => os.tecnicoAtribuido?.id === tecnico.id).length,
-        }));
-
 
         return {
-            os: osStats,
-            clientes: clienteStats,
-            equipamentos: equipamentoStats,
+            os: {
+                total: Number(d.totalOs ?? 0),
+                status: {
+                    CONCLUIDA: Number(d.osConcluidas ?? 0),
+                    EM_ANDAMENTO: Number(d.osEmAndamento ?? 0),
+                    PENDENTE_PECAS: Number(d.osPendentes ?? 0),
+                    EM_ABERTO: Number(d.osAbertas ?? 0)
+                },
+                recentes: d.ordensRecentes || []
+            },
+            clientes: {
+                total: Number(d.totalClientes ?? 0)
+            },
+            equipamentos: {
+                total: Number(d.totalEquipamentos ?? 0)
+            },
             tecnicos: {
-                osPorTecnico
+                osPorTecnico: (d.osPorTecnico || []).map((t) => ({
+                    name: t.name,
+                    "Ordens Atribuídas": Number(t.ordensAtribuidas ?? 0)
+                }))
             }
         };
 

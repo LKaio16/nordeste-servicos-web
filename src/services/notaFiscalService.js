@@ -9,6 +9,16 @@ export const getAllNotasFiscais = async (fornecedorId, clienteId, tipo) => {
   return response.data;
 };
 
+export const getNotasFiscaisPage = async ({ fornecedorId, clienteId, tipo, searchTerm, page = 0, size = 20 } = {}) => {
+  const params = { page, size };
+  if (fornecedorId) params.fornecedorId = fornecedorId;
+  if (clienteId) params.clienteId = clienteId;
+  if (tipo) params.tipo = tipo;
+  if (searchTerm) params.searchTerm = searchTerm;
+  const response = await api.get('/api/notas-fiscais/paged', { params });
+  return response.data;
+};
+
 export const getNotaFiscalById = async (id) => {
   const response = await api.get(`/api/notas-fiscais/${id}`);
   return response.data;

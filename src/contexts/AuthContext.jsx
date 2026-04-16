@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import axios from 'axios';
+import api, { apiBaseURL } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { getUsuarioById } from '../services/usuarioService';
 
@@ -7,7 +8,7 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true); // Adiciona o estado de loading
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -19,16 +20,14 @@ export const AuthProvider = ({ children }) => {
                 api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 const parsedUser = JSON.parse(storedUser);
                 try {
-                    // Tenta buscar o perfil mais recente para obter a foto
                     const fullProfile = await getUsuarioById(parsedUser.id);
                     setUser(fullProfile);
                 } catch (error) {
-                    console.error("Falha ao recarregar perfil, usando dados locais.", error);
-                    // Em caso de falha (ex: offline), usa os dados do localStorage
+                    console.error('Falha ao recarregar perfil, usando dados locais.', error);
                     setUser(parsedUser);
                 }
             }
-            setIsLoading(false); // Finaliza o carregamento
+            setIsLoading(false);
         };
         loadUser();
     }, []);
@@ -36,42 +35,61 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         try {
             const response = await api.post('/api/auth/login', credentials);
-            const { token, ...userData } = response.data;
+            const accessToken = response.data.accessToken ?? response.data.token;
+            const refreshToken = response.data.refreshToken ?? '';
+            const { accessToken: _a, refreshToken: _r, token: _t, ...userData } = response.data;
 
-            // Adiciona a verificação de perfil no frontend
             if (userData.perfil !== 'ADMIN') {
-                throw new Error("Acesso negado. Apenas administradores podem entrar.");
+                throw new Error('Acesso negado. Apenas administradores podem entrar.');
             }
 
-            localStorage.setItem('token', token);
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            if (!accessToken) {
+                throw new Error('Resposta de login sem accessToken.');
+            }
 
-            // Busca o perfil completo para ter todos os dados
+            localStorage.setItem('token', accessToken);
+            if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+            }
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
             const fullProfile = await getUsuarioById(userData.id);
 
-            // Salva o perfil completo no estado
             setUser(fullProfile);
 
-            // Salva no localStorage uma versão SEM a foto para não sobrecarregar
             const userToStore = { ...fullProfile };
             delete userToStore.fotoPerfil;
             localStorage.setItem('user', JSON.stringify(userToStore));
 
             return fullProfile;
         } catch (error) {
-            console.error("Falha no login", error);
-            // Garante que o loading seja resetado em caso de erro
+            console.error('Falha no login', error);
             setIsLoading(false);
-            // Propaga o erro para ser tratado na UI
             throw error;
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        const refresh = localStorage.getItem('refreshToken');
+        try {
+            await axios.post(
+                `${apiBaseURL}/api/auth/logout`,
+                refresh ? { refreshToken: refresh } : {},
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true',
+                    },
+                },
+            );
+        } catch (_) {
+            /* ignora falha de rede */
+        }
         setUser(null);
         setIsLoading(false);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         delete api.defaults.headers.common['Authorization'];
         navigate('/login');
     };
@@ -81,10 +99,10 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
-        isLoading, // Expõe o estado de loading
+        isLoading,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export default AuthContext; 
+export default AuthContext;

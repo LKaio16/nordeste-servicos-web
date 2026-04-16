@@ -11,6 +11,22 @@ const getAllOrcamentos = async () => {
     }
 };
 
+const getOrcamentosPage = async (searchTerm = '', page = 0, size = 20) => {
+    try {
+        const response = await api.get('/api/orcamentos/paged', {
+            params: {
+                searchTerm: searchTerm || null,
+                page,
+                size
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar página de Orçamentos:", error.response?.data || error.message);
+        throw new Error(getApiErrorMessage(error, "Não foi possível carregar a listagem paginada de Orçamentos."));
+    }
+};
+
 const getOrcamentoById = async (id) => {
     try {
         const response = await api.get(`/api/orcamentos/${id}`);
@@ -93,6 +109,7 @@ const getItensByOrcamentoId = async (orcamentoId) => {
 
 const orcamentoService = {
     getAllOrcamentos,
+    getOrcamentosPage,
     getOrcamentoById,
     createOrcamento,
     updateOrcamento,
