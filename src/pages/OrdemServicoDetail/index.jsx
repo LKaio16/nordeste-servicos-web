@@ -13,7 +13,8 @@ import {
     CameraOutlined,
     EditFilled,
     UploadOutlined,
-    BellOutlined
+    BellOutlined,
+    PlusOutlined
 } from '@ant-design/icons';
 import * as osService from '../../services/osService';
 import {
@@ -27,7 +28,6 @@ import {
     Col,
     Popconfirm,
     Modal,
-    DatePicker,
     Table,
     Image,
     Avatar,
@@ -357,7 +357,12 @@ function OrdemServicoDetailPage() {
     const [isLoadingRegistrosTempo, setIsLoadingRegistrosTempo] = useState(false);
     const [editTempoModalOpen, setEditTempoModalOpen] = useState(false);
     const [tempoEditRegistroId, setTempoEditRegistroId] = useState(null);
-    const [tempoEditHoraTermino, setTempoEditHoraTermino] = useState(null); // dayjs
+    const [tempoEditHoraInicio, setTempoEditHoraInicio] = useState(null);
+    const [tempoEditHoras, setTempoEditHoras] = useState(null);
+
+    const [novoTempoModalOpen, setNovoTempoModalOpen] = useState(false);
+    const [novoTempoHoras, setNovoTempoHoras] = useState(1);
+    const [novoTempoSaving, setNovoTempoSaving] = useState(false);
 
     const [lembreteAtivo, setLembreteAtivo] = useState(false);
     const [lembreteDias, setLembreteDias] = useState(30);
@@ -423,24 +428,75 @@ function OrdemServicoDetailPage() {
 
     const openEditarTempo = (registro) => {
         setTempoEditRegistroId(registro?.id ?? null);
-        const defaultHora = registro?.horaTermino ? dayjs(registro.horaTermino) : dayjs();
-        setTempoEditHoraTermino(defaultHora);
+        const inicio = registro?.horaInicio ? dayjs(registro.horaInicio) : dayjs();
+        setTempoEditHoraInicio(inicio);
+        let horas = 1;
+        if (registro?.horaTermino) {
+            horas = Math.max(0.01, dayjs(registro.horaTermino).diff(inicio, 'hour', true));
+        } else if (registro?.horasTrabalhadas != null && Number(registro.horasTrabalhadas) > 0) {
+            horas = Number(registro.horasTrabalhadas);
+        }
+        setTempoEditHoras(Number(horas.toFixed(2)));
         setEditTempoModalOpen(true);
     };
 
     const handleSalvarEdicaoTempo = async () => {
-        if (!tempoEditRegistroId) return;
+        if (!tempoEditRegistroId || !tempoEditHoraInicio) return;
+        const horas = Number(tempoEditHoras);
+        if (!horas || horas <= 0) {
+            message.warning('Informe a duração em horas (maior que zero).');
+            return;
+        }
         try {
-            const horaTerminoStr = tempoEditHoraTermino
-                ? tempoEditHoraTermino.format('YYYY-MM-DDTHH:mm:ss')
-                : null;
-
+            const horaTerminoStr = tempoEditHoraInicio.add(horas, 'hour').format('YYYY-MM-DDTHH:mm:ss');
             await osService.finalizarRegistroTempo(id, tempoEditRegistroId, horaTerminoStr);
             message.success('Registro de tempo atualizado com sucesso!');
             setEditTempoModalOpen(false);
             await refreshRegistrosTempo();
         } catch (e) {
             message.error('Erro ao atualizar registro de tempo.');
+        }
+    };
+
+    const handleExcluirRegistroTempo = async (registroId) => {
+        try {
+            await osService.deleteRegistroTempo(id, registroId);
+            message.success('Registro de tempo excluído.');
+            await refreshRegistrosTempo();
+        } catch (e) {
+            message.error('Erro ao excluir registro de tempo.');
+        }
+    };
+
+    const openNovoRegistroTempo = () => {
+        setNovoTempoHoras(1);
+        setNovoTempoModalOpen(true);
+    };
+
+    const handleSalvarNovoRegistroTempo = async () => {
+        const tecnicoId = os?.tecnicoAtribuido?.id;
+        if (!tecnicoId) {
+            message.warning('Atribua um técnico à OS antes de criar um registro de tempo.');
+            return;
+        }
+        const horas = Number(novoTempoHoras);
+        if (!horas || horas <= 0) {
+            message.warning('Informe a duração em horas (maior que zero).');
+            return;
+        }
+        setNovoTempoSaving(true);
+        try {
+            const criado = await osService.iniciarRegistroTempo(id, tecnicoId);
+            const inicio = criado?.horaInicio ? dayjs(criado.horaInicio) : dayjs();
+            const horaTerminoStr = inicio.add(horas, 'hour').format('YYYY-MM-DDTHH:mm:ss');
+            await osService.finalizarRegistroTempo(id, criado.id, horaTerminoStr);
+            message.success('Registro de tempo criado.');
+            setNovoTempoModalOpen(false);
+            await refreshRegistrosTempo();
+        } catch (e) {
+            message.error('Erro ao criar registro de tempo.');
+        } finally {
+            setNovoTempoSaving(false);
         }
     };
 
@@ -1021,10 +1077,15 @@ function OrdemServicoDetailPage() {
                 </Section>
 
                 <Section $d="0.26s">
-                    <SectionHeader>
-                        <CalendarOutlined />
-                        <h3>Registro de tempo</h3>
-                    </SectionHeader>
+                    <SectionHeaderRow>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <CalendarOutlined />
+                            <h3 style={{ margin: 0 }}>Registro de tempo</h3>
+                        </div>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={openNovoRegistroTempo}>
+                            Novo registro
+                        </Button>
+                    </SectionHeaderRow>
                     <SectionBody>
                     {isLoadingRegistrosTempo ? (
                         <div style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
@@ -1082,6 +1143,18 @@ function OrdemServicoDetailPage() {
                                             >
                                                 Editar
                                             </Button>
+                                            <Popconfirm
+                                                title="Excluir este registro de tempo?"
+                                                description="Esta ação não pode ser desfeita."
+                                                okText="Excluir"
+                                                cancelText="Cancelar"
+                                                okButtonProps={{ danger: true }}
+                                                onConfirm={() => handleExcluirRegistroTempo(record.id)}
+                                            >
+                                                <Button size="small" danger icon={<DeleteOutlined />}>
+                                                    Excluir
+                                                </Button>
+                                            </Popconfirm>
                                         </Space>
                                     ),
                                 },
@@ -1220,15 +1293,66 @@ function OrdemServicoDetailPage() {
                 okText="Salvar"
             >
                 <div style={{ marginBottom: 12, color: '#555' }}>
-                    Ajuste a <strong>hora de término</strong> para recalcular as horas trabalhadas.
+                    O término é calculado a partir da <strong>hora de início</strong> do registro e da{' '}
+                    <strong>duração</strong> informada (ex.: 1,5 = 1h30).
                 </div>
-                <DatePicker
-                    style={{ width: '100%' }}
-                    showTime={{ format: 'HH:mm' }}
-                    format="YYYY-MM-DD HH:mm"
-                    value={tempoEditHoraTermino}
-                    onChange={(v) => setTempoEditHoraTermino(v)}
-                />
+                {tempoEditHoraInicio && (
+                    <div style={{ marginBottom: 12 }}>
+                        <Text type="secondary">Início (fixo): </Text>
+                        <Text strong>{formatDate(tempoEditHoraInicio.toISOString())}</Text>
+                    </div>
+                )}
+                <div style={{ marginBottom: 8 }}>
+                    <Text>Duração (horas)</Text>
+                    <InputNumber
+                        style={{ width: '100%', marginTop: 6 }}
+                        min={0.01}
+                        max={999}
+                        step={0.25}
+                        precision={2}
+                        value={tempoEditHoras}
+                        onChange={(v) => setTempoEditHoras(v)}
+                    />
+                </div>
+                {tempoEditHoraInicio && tempoEditHoras > 0 && (
+                    <div style={{ marginTop: 12, padding: '10px 12px', background: '#f5f7fb', borderRadius: 8 }}>
+                        <Text type="secondary">Término calculado: </Text>
+                        <Text strong>
+                            {formatDate(tempoEditHoraInicio.add(tempoEditHoras, 'hour').toISOString())}
+                        </Text>
+                    </div>
+                )}
+            </Modal>
+
+            <Modal
+                title="Novo registro de tempo"
+                open={novoTempoModalOpen}
+                onCancel={() => setNovoTempoModalOpen(false)}
+                onOk={handleSalvarNovoRegistroTempo}
+                okText="Criar"
+                confirmLoading={novoTempoSaving}
+            >
+                <div style={{ marginBottom: 12, color: '#555' }}>
+                    Será criado um registro para <strong>{os?.tecnicoAtribuido?.nome || 'o técnico atribuído'}</strong>{' '}
+                    com início no momento da criação e a duração abaixo.
+                </div>
+                {!os?.tecnicoAtribuido?.id && (
+                    <div style={{ marginBottom: 12 }}>
+                        <Text type="warning">Atribua um técnico à OS na edição da ordem para usar esta função.</Text>
+                    </div>
+                )}
+                <div>
+                    <Text>Duração (horas)</Text>
+                    <InputNumber
+                        style={{ width: '100%', marginTop: 6 }}
+                        min={0.01}
+                        max={999}
+                        step={0.25}
+                        precision={2}
+                        value={novoTempoHoras}
+                        onChange={(v) => setNovoTempoHoras(v ?? 1)}
+                    />
+                </div>
             </Modal>
         </Page>
     );
