@@ -1040,8 +1040,6 @@ function OrcamentoCreatePage() {
                                 <TextArea
                                     rows={5}
                                     placeholder="Digite as observações e condições do orçamento..."
-                                    maxLength={1000}
-                                    showCount
                                 />
                             </Form.Item>
                         </Col>
