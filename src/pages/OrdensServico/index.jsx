@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import {
     FiPlus,
@@ -359,10 +359,12 @@ const TD = styled.div`
     }
 `;
 
-const OSCell = styled.div`
+const OSCell = styled(Link)`
     display: flex;
     align-items: center;
     gap: 14px;
+    text-decoration: none;
+    color: inherit;
 `;
 
 const OSAvatar = styled.div`
@@ -727,6 +729,11 @@ const statusTone = (status) => {
 };
 
 const OrdensServicoPage = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialPage = Number(searchParams.get('page')) || 1;
+    const initialPageSize = Number(searchParams.get('size')) || 20;
+    const initialSearch = searchParams.get('q') || '';
+
     const [ordensServico, setOrdensServico] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -734,15 +741,24 @@ const OrdensServicoPage = () => {
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedDateOS, setSelectedDateOS] = useState([]);
     const [pagination, setPagination] = useState({
-        current: 1,
-        pageSize: 20,
+        current: initialPage,
+        pageSize: initialPageSize,
         total: 0,
         hasNext: false,
     });
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchInput, setSearchInput] = useState('');
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [searchInput, setSearchInput] = useState(initialSearch);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const params = {};
+        if (pagination.current > 1) params.page = String(pagination.current);
+        if (pagination.pageSize !== 20) params.size = String(pagination.pageSize);
+        if (searchTerm) params.q = searchTerm;
+        setSearchParams(params, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pagination.current, pagination.pageSize, searchTerm]);
 
     const getImageSrc = (imageData) => {
         if (!imageData) return null;
@@ -1057,7 +1073,7 @@ const OrdensServicoPage = () => {
                                     <TRow key={os.id} onClick={() => handleRowClick(os)}>
                                         <TD>
                                             <MobileLabel>OS / Cliente</MobileLabel>
-                                            <OSCell>
+                                            <OSCell to={`/admin/os/detalhes/${os.id}`} onClick={(e) => e.stopPropagation()}>
                                                 <OSAvatar>#{os.id}</OSAvatar>
                                                 <OSDetails>
                                                     <OSIdLine>OS #{os.id}</OSIdLine>
@@ -1083,7 +1099,7 @@ const OrdensServicoPage = () => {
                                         </TD>
                                         <TD>
                                             <ActionsCell onClick={(e) => e.stopPropagation()}>
-                                                <ActionBtn title="Ver detalhes" onClick={() => handleViewDetails(os.id)}>
+                                                <ActionBtn as={Link} to={`/admin/os/detalhes/${os.id}`} title="Ver detalhes">
                                                     <FiEye />
                                                 </ActionBtn>
                                                 <ActionBtn title="Editar" onClick={() => handleEdit(os.id)}>
