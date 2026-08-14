@@ -51,6 +51,18 @@ const clearSession = () => {
     delete api.defaults.headers.common['Authorization'];
 };
 
+const postRefresh = (refreshTokenValue) =>
+    axios.post(
+        `${baseURL}/api/auth/refresh`,
+        { refreshToken: refreshTokenValue },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+            },
+        },
+    );
+
 const refreshAccessToken = () => {
     if (isRefreshing) {
         return refreshPromise;
@@ -58,26 +70,47 @@ const refreshAccessToken = () => {
 
     isRefreshing = true;
     refreshPromise = (async () => {
-        const refresh = localStorage.getItem('refreshToken');
-        if (!refresh) {
-            throw new Error('Refresh token ausente.');
+        // Outra aba (ou uma chamada concorrente) pode já ter renovado o
+        // token nesse meio tempo — se o token atual já é válido, usa ele
+        // em vez de gastar o refresh token (que é de uso único) à toa.
+        const currentToken = localStorage.getItem('token');
+        if (currentToken && !isTokenExpired(currentToken)) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+            return currentToken;
         }
 
-        const { data } = await axios.post(
-            `${baseURL}/api/auth/refresh`,
-            { refreshToken: refresh },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true',
-                },
-            },
-        );
+        const refresh = localStorage.getItem('refreshToken');
+        if (!refresh) {
+            const err = new Error('Refresh token ausente.');
+            err.isAuthFailure = true;
+            throw err;
+        }
 
+        let response;
+        try {
+            response = await postRefresh(refresh);
+        } catch (err) {
+            // O refresh token é rotacionado a cada uso: se outra aba renovou
+            // entre o momento em que lemos e agora, o nosso já foi revogado.
+            // Tenta uma vez com o valor mais recente antes de desistir.
+            const latestRefresh = localStorage.getItem('refreshToken');
+            if (err.response?.status === 401 && latestRefresh && latestRefresh !== refresh) {
+                response = await postRefresh(latestRefresh);
+            } else {
+                if (err.response?.status === 401) {
+                    err.isAuthFailure = true;
+                }
+                throw err;
+            }
+        }
+
+        const { data } = response;
         const accessToken = data.accessToken;
         const newRefresh = data.refreshToken;
         if (!accessToken || !newRefresh) {
-            throw new Error('Resposta de refresh inválida');
+            const err = new Error('Resposta de refresh inválida');
+            err.isAuthFailure = true;
+            throw err;
         }
 
         localStorage.setItem('token', accessToken);
@@ -106,8 +139,10 @@ api.interceptors.request.use(
             try {
                 token = await refreshAccessToken();
             } catch (refreshErr) {
-                clearSession();
-                window.location.href = '/login';
+                if (refreshErr.isAuthFailure) {
+                    clearSession();
+                    window.location.href = '/login';
+                }
                 return Promise.reject(refreshErr);
             }
         }
@@ -138,8 +173,10 @@ api.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return api(originalRequest);
         } catch (refreshErr) {
-            clearSession();
-            window.location.href = '/login';
+            if (refreshErr.isAuthFailure) {
+                clearSession();
+                window.location.href = '/login';
+            }
             return Promise.reject(refreshErr);
         }
     },
