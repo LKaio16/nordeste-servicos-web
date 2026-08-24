@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+export const apiBaseURL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
 const baseURL = apiBaseURL;
 
 const EXPIRY_SAFETY_MARGIN_MS = 10 * 1000;
