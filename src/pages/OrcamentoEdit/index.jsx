@@ -475,11 +475,17 @@ function OrcamentoEditPage() {
                     ? dayjs(orcamentoData.dataValidade, 'YYYY-MM-DD')
                     : null;
 
+                // Data/hora de emissão vem como ISO datetime (ou data de criação, se nunca foi definida)
+                const formattedEmissao = orcamentoData.dataHoraEmissao
+                    ? dayjs(orcamentoData.dataHoraEmissao)
+                    : (orcamentoData.dataCriacao ? dayjs(orcamentoData.dataCriacao, 'YYYY-MM-DD') : dayjs());
+
                 // Definir valores iniciais do formulário
                 form.setFieldsValue({
                     status: orcamentoData.status || 'PENDENTE',
                     ordemServicoOrigemId: orcamentoData.ordemServicoOrigemId || null,
                     dataValidade: formattedDate,
+                    dataEmissao: formattedEmissao,
                     observacoesCondicoes: orcamentoData.observacoesCondicoes || '',
                 });
 
@@ -513,11 +519,20 @@ function OrcamentoEditPage() {
                 dataValidade = `${year}-${month}-${day}`;
             }
 
+            let dataHoraEmissao = null;
+            if (values.dataEmissao) {
+                const day = String(values.dataEmissao.date()).padStart(2, '0');
+                const month = String(values.dataEmissao.month() + 1).padStart(2, '0');
+                const year = values.dataEmissao.year();
+                dataHoraEmissao = `${year}-${month}-${day}T00:00:00`;
+            }
+
             const payload = {
                 clienteId: clienteId,
                 status: values.status,
                 ordemServicoOrigemId: values.ordemServicoOrigemId || null,
                 dataValidade: dataValidade,
+                dataHoraEmissao: dataHoraEmissao,
                 observacoesCondicoes: values.observacoesCondicoes || '',
             };
 
@@ -857,6 +872,28 @@ function OrcamentoEditPage() {
                                         </Option>
                                 ))}
                             </Select>
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="dataEmissao"
+                                label={
+                                    <Space>
+                                        <CalendarOutlined />
+                                        <span>Data de Emissão</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, selecione a data de emissão!' }
+                                ]}
+                            >
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    placeholder="Selecione a data de emissão"
+                                    format="DD/MM/YYYY"
+                                    getPopupContainer={(trigger) => trigger.parentElement}
+                                />
                             </Form.Item>
                         </Col>
 

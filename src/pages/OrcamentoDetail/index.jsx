@@ -348,7 +348,7 @@ function OrcamentoDetailPage() {
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        return dayjs(dateString, 'YYYY-MM-DD').format('DD/MM/YYYY');
+        return dayjs(dateString).format('DD/MM/YYYY');
     };
 
     useEffect(() => {
@@ -661,7 +661,7 @@ function OrcamentoDetailPage() {
                                                 <span>Data de emissão</span>
                                             </Space>
                                         }
-                                        value={formatDate(orcamento.dataEmissao)}
+                                        value={formatDate(orcamento.dataHoraEmissao || orcamento.dataCriacao)}
                                         valueStyle={{ color: '#1a4494', fontSize: '18px' }}
                                     />
                                 </StatisticCard>

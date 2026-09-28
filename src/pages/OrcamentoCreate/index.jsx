@@ -577,10 +577,20 @@ function OrcamentoCreatePage() {
                 dataValidade = `${year}-${month}-${day}`;
             }
 
+            let dataHoraEmissao = null;
+            if (values.dataEmissao) {
+                const day = String(values.dataEmissao.date()).padStart(2, '0');
+                const month = String(values.dataEmissao.month() + 1).padStart(2, '0');
+                const year = values.dataEmissao.year();
+                dataHoraEmissao = `${year}-${month}-${day}T00:00:00`;
+            }
+
             // Converter a data para o formato esperado
+            const { dataEmissao: _dataEmissao, ...rest } = values;
             const formData = {
-                ...values,
+                ...rest,
                 dataValidade: dataValidade,
+                dataHoraEmissao: dataHoraEmissao,
                 status: values.status || 'PENDENTE'
             };
 
@@ -920,7 +930,8 @@ function OrcamentoCreatePage() {
                     layout="vertical"
                     onFinish={handleSubmit}
                     initialValues={{
-                        status: 'PENDENTE'
+                        status: 'PENDENTE',
+                        dataEmissao: dayjs()
                     }}
                 >
                     <Row gutter={[24, 16]}>
@@ -1006,6 +1017,27 @@ function OrcamentoCreatePage() {
                                     <Option value="REJEITADO">Rejeitado</Option>
                                     <Option value="CANCELADO">Cancelado</Option>
                                 </Select>
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                name="dataEmissao"
+                                label={
+                                    <Space>
+                                        <CalendarOutlined />
+                                        <span>Data de Emissão</span>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Por favor, selecione a data de emissão!' }
+                                ]}
+                            >
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    placeholder="Selecione a data"
+                                    format="DD/MM/YYYY"
+                                />
                             </Form.Item>
                         </Col>
 
