@@ -12,6 +12,8 @@ import {
     FiChevronLeft,
     FiChevronRight,
     FiAlertCircle,
+    FiSearch,
+    FiX,
 } from 'react-icons/fi';
 import * as equipamentoService from '../../services/equipamentoService';
 import * as clienteService from '../../services/clienteService';
@@ -180,6 +182,71 @@ const Content = styled.div`
     margin-top: -48px;
     position: relative;
     z-index: 2;
+`;
+
+const SearchPanel = styled.div`
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(12, 45, 107, 0.1);
+    border: 1px solid rgba(26, 68, 148, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: ${fadeUp} 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+`;
+
+const SearchInput = styled.div`
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f4f7fb;
+    border: 1.5px solid #eef2f9;
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus-within {
+        border-color: #1a4494;
+        box-shadow: 0 0 0 3px rgba(26, 68, 148, 0.1);
+        background: #fff;
+    }
+
+    svg { color: #6b86b8; flex-shrink: 0; width: 18px; height: 18px; }
+
+    input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 14px;
+        font-family: inherit;
+        color: #0c2d6b;
+
+        &::placeholder { color: #a8b8d0; }
+    }
+`;
+
+const ClearBtn = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #dde4f0;
+    color: #6b86b8;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+
+    &:hover { background: #1a4494; color: #fff; }
+
+    svg { width: 14px; height: 14px; }
 `;
 
 const TableWrapper = styled.div`
@@ -517,6 +584,7 @@ const EquipamentosPage = () => {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [busca, setBusca] = useState('');
 
     const fetchData = useCallback(async () => {
         try {
@@ -566,14 +634,25 @@ const EquipamentosPage = () => {
         setDeleteTarget(null);
     };
 
-    const totalPages = Math.ceil(equipamentos.length / perPage);
+    const filteredEquipamentos = useMemo(() => {
+        const normalize = (s) =>
+            (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        const termo = normalize(busca).trim();
+        if (!termo) return equipamentos;
+        return equipamentos.filter((e) =>
+            [e.tipo, e.marcaModelo, e.numeroSerieChassi, clientesMap[e.clienteId]]
+                .some((campo) => normalize(campo).includes(termo))
+        );
+    }, [equipamentos, clientesMap, busca]);
+
+    const totalPages = Math.ceil(filteredEquipamentos.length / perPage);
     const paginatedEquipamentos = useMemo(() => {
         const start = (page - 1) * perPage;
-        return equipamentos.slice(start, start + perPage);
-    }, [equipamentos, page, perPage]);
+        return filteredEquipamentos.slice(start, start + perPage);
+    }, [filteredEquipamentos, page, perPage]);
 
-    const startItem = equipamentos.length > 0 ? (page - 1) * perPage + 1 : 0;
-    const endItem = Math.min(page * perPage, equipamentos.length);
+    const startItem = filteredEquipamentos.length > 0 ? (page - 1) * perPage + 1 : 0;
+    const endItem = Math.min(page * perPage, filteredEquipamentos.length);
 
     const pageNumbers = useMemo(() => {
         const pages = [];
@@ -621,15 +700,31 @@ const EquipamentosPage = () => {
             </Hero>
 
             <Content>
+                <SearchPanel>
+                    <SearchInput>
+                        <FiSearch />
+                        <input
+                            placeholder="Buscar por equipamento, marca/modelo, nº de série ou cliente..."
+                            value={busca}
+                            onChange={(e) => { setBusca(e.target.value); setPage(1); }}
+                        />
+                        {busca && (
+                            <ClearBtn onClick={() => { setBusca(''); setPage(1); }}>
+                                <FiX />
+                            </ClearBtn>
+                        )}
+                    </SearchInput>
+                </SearchPanel>
+
                 <TableWrapper>
                     {isLoading ? (
                         <LoadingOverlay>
                             <FiRefreshCw />
                         </LoadingOverlay>
-                    ) : equipamentos.length === 0 ? (
+                    ) : filteredEquipamentos.length === 0 ? (
                         <EmptyState>
                             <FiTool />
-                            <p>Nenhum equipamento encontrado</p>
+                            <p>{busca ? 'Nenhum equipamento corresponde à busca' : 'Nenhum equipamento encontrado'}</p>
                         </EmptyState>
                     ) : (
                         <>
@@ -699,7 +794,7 @@ const EquipamentosPage = () => {
 
                             <Pagination>
                                 <PagInfo>
-                                    {startItem}–{endItem} de {equipamentos.length} equipamentos
+                                    {startItem}–{endItem} de {filteredEquipamentos.length} equipamentos
                                 </PagInfo>
                                 <PagControls>
                                     <PagBtn
