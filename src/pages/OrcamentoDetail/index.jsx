@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import dayjs from 'dayjs';
 import orcamentoService from '../../services/orcamentoService';
+import { capitalizeFirst } from '../../utils/textUtils';
 import * as contaService from '../../services/contaService';
 import {
     Card,
@@ -440,7 +441,7 @@ function OrcamentoDetailPage() {
             key: 'descricao',
             render: (text) => (
                 <Text strong style={{ color: '#1a4494' }}>
-                    {text || 'N/A'}
+                    {capitalizeFirst(text) || 'N/A'}
                 </Text>
             ),
         },

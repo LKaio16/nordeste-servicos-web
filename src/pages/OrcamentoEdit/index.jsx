@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SaveOutlined, UserOutlined, FileTextOutlined, CalendarOutlined, EditOutlined, PlusOutlined, DeleteOutlined, ShoppingCartOutlined, ToolOutlined, DollarOutlined, CheckCircleOutlined, PercentageOutlined } from '@ant-design/icons';
 import orcamentoService from '../../services/orcamentoService';
+import { capitalizeFirst } from '../../utils/textUtils';
 import * as osService from '../../services/osService';
 import { pecaMaterialService } from '../../services/pecaMaterialService';
 import tipoServicoService from '../../services/tipoServicoService';
@@ -661,7 +662,7 @@ function OrcamentoEditPage() {
                     return (
                         <div>
                             <div style={{ fontWeight: 600, color: '#1a4494' }}>
-                                {record.pecaMaterial.nome}
+                                {capitalizeFirst(record.pecaMaterial.nome)}
                             </div>
                             <div style={{ fontSize: '12px', color: '#666' }}>
                                 Código: {record.pecaMaterial.codigo}
@@ -672,14 +673,14 @@ function OrcamentoEditPage() {
                     return (
                         <div>
                             <div style={{ fontWeight: 600, color: '#1a4494' }}>
-                                {record.tipoServico.descricao}
+                                {capitalizeFirst(record.tipoServico.descricao)}
                             </div>
                         </div>
                     );
                 } else {
                     return (
                         <div style={{ fontWeight: 600, color: '#1a4494' }}>
-                            {record.descricao}
+                            {capitalizeFirst(record.descricao)}
                         </div>
                     );
                 }
