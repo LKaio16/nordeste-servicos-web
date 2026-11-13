@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { FiArrowLeft, FiSave, FiClipboard, FiUser, FiTool, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
@@ -252,17 +252,32 @@ function OrdemServicoEditPage() {
     const [clientes, setClientes] = useState([]);
     const [equipamentos, setEquipamentos] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
-    const [equipamentosFiltrados, setEquipamentosFiltrados] = useState([]);
+    const [loadingClientes, setLoadingClientes] = useState(true);
+    const [loadingEquipamentos, setLoadingEquipamentos] = useState(true);
+    const [loadingTecnicos, setLoadingTecnicos] = useState(true);
+    const clienteIdWatch = Form.useWatch('clienteId', form);
+
+    const equipamentosFiltrados = useMemo(
+        () => (clienteIdWatch ? equipamentos.filter((e) => e.clienteId === clienteIdWatch) : []),
+        [equipamentos, clienteIdWatch]
+    );
 
     useEffect(() => {
+        // Listas dos selects carregam em paralelo e sem bloquear a tela; só a OS é necessária para exibir o formulário
+        const onListError = (err) => {
+            console.error('Falha ao carregar lista:', err);
+            message.error('Falha ao carregar dados da página.');
+        };
+        clienteService.getAllClientes().then(setClientes).catch(onListError).finally(() => setLoadingClientes(false));
+        equipamentoService.getAllEquipamentos().then(setEquipamentos).catch(onListError).finally(() => setLoadingEquipamentos(false));
+        usuarioService.getAllUsuarios()
+            .then((users) => setTecnicos(users.filter((u) => u.perfil === 'TECNICO')))
+            .catch(onListError)
+            .finally(() => setLoadingTecnicos(false));
+
         const fetchData = async () => {
             try {
-                const [os, clientesData, equipamentosData, tecnicosData] = await Promise.all([
-                    osService.getOrdemServicoById(id),
-                    clienteService.getAllClientes(),
-                    equipamentoService.getAllEquipamentos(),
-                    usuarioService.getAllUsuarios().then((users) => users.filter((u) => u.perfil === 'TECNICO')),
-                ]);
+                const os = await osService.getOrdemServicoById(id);
 
                 form.setFieldsValue({
                     problemaRelatado: os.problemaRelatado || '',
@@ -276,13 +291,6 @@ function OrdemServicoEditPage() {
                 });
                 setOsTitulo(os.cliente?.nomeCompleto ? `OS #${id} · ${os.cliente.nomeCompleto}` : `OS #${id}`);
 
-                setClientes(clientesData);
-                setEquipamentos(equipamentosData);
-                setTecnicos(tecnicosData);
-
-                if (os.cliente?.id) {
-                    setEquipamentosFiltrados(equipamentosData.filter((e) => e.clienteId === os.cliente.id));
-                }
             } catch (err) {
                 console.error('Falha ao carregar dados:', err);
                 message.error('Falha ao carregar dados da página.');
@@ -293,12 +301,7 @@ function OrdemServicoEditPage() {
         fetchData();
     }, [id, form]);
 
-    const handleClienteChange = (clienteId) => {
-        if (clienteId) {
-            setEquipamentosFiltrados(equipamentos.filter((e) => e.clienteId === clienteId));
-        } else {
-            setEquipamentosFiltrados([]);
-        }
+    const handleClienteChange = () => {
         form.setFieldsValue({ equipamentoId: null });
     };
 
@@ -390,6 +393,7 @@ function OrdemServicoEditPage() {
                                             showSearch
                                             optionFilterProp="children"
                                             onChange={handleClienteChange}
+                                            loading={loadingClientes}
                                             allowClear
                                         >
                                             {clientes.map((cliente) => (
@@ -411,7 +415,7 @@ function OrdemServicoEditPage() {
                                         }
                                         rules={[{ required: true, message: 'Selecione um equipamento' }]}
                                     >
-                                        <Select placeholder="Selecione um equipamento" showSearch optionFilterProp="children">
+                                        <Select placeholder="Selecione um equipamento" showSearch optionFilterProp="children" loading={loadingEquipamentos}>
                                             {equipamentosFiltrados.map((equip) => (
                                                 <Option key={equip.id} value={equip.id}>
                                                     {equip.marcaModelo} (S/N: {equip.numeroSerieChassi})
@@ -430,7 +434,7 @@ function OrdemServicoEditPage() {
                                             </span>
                                         }
                                     >
-                                        <Select placeholder="Opcional" showSearch optionFilterProp="children" allowClear>
+                                        <Select placeholder="Opcional" showSearch optionFilterProp="children" allowClear loading={loadingTecnicos}>
                                             {tecnicos.map((tecnico) => (
                                                 <Option key={tecnico.id} value={tecnico.id}>
                                                     {tecnico.nome}

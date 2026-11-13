@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { FiArrowLeft, FiSave, FiClipboard, FiTool } from 'react-icons/fi';
@@ -6,7 +6,7 @@ import * as osService from '../../services/osService';
 import * as clienteService from '../../services/clienteService';
 import * as equipamentoService from '../../services/equipamentoService';
 import * as usuarioService from '../../services/usuarioService';
-import { Form, Input, Select, message, Spin, Row, Col } from 'antd';
+import { Form, Input, Select, message, Row, Col } from 'antd';
 
 const fadeUp = keyframes`
     from { opacity: 0; transform: translateY(24px); }
@@ -230,54 +230,38 @@ const StyledForm = styled(Form)`
     }
 `;
 
-const LoadWrap = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40vh;
-    .ant-spin-dot-item {
-        background-color: #1a4494 !important;
-    }
-`;
-
 function OrdemServicoCreatePage() {
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [clientes, setClientes] = useState([]);
     const [equipamentos, setEquipamentos] = useState([]);
-    const [equipamentosFiltrados, setEquipamentosFiltrados] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [loadingClientes, setLoadingClientes] = useState(true);
+    const [loadingEquipamentos, setLoadingEquipamentos] = useState(true);
+    const [loadingTecnicos, setLoadingTecnicos] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const clienteIdWatch = Form.useWatch('clienteId', form);
 
+    const equipamentosFiltrados = useMemo(
+        () => (clienteIdWatch ? equipamentos.filter((e) => e.clienteId === clienteIdWatch) : []),
+        [equipamentos, clienteIdWatch]
+    );
+
+    // Cada lista carrega de forma independente: o formulário aparece na hora e os selects vão preenchendo
     useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const [clientesRes, equipamentosRes, tecnicosRes] = await Promise.all([
-                    clienteService.getAllClientes(),
-                    equipamentoService.getAllEquipamentos(),
-                    usuarioService.getAllUsuarios(),
-                ]);
-                setClientes(clientesRes);
-                setEquipamentos(equipamentosRes);
-                setTecnicos(tecnicosRes.filter((u) => u.perfil === 'TECNICO'));
-            } catch (err) {
-                console.error('Falha ao carregar dados iniciais:', err);
-                message.error('Falha ao carregar dados para o formulário.');
-            } finally {
-                setIsLoading(false);
-            }
+        const onError = (err) => {
+            console.error('Falha ao carregar dados iniciais:', err);
+            message.error('Falha ao carregar dados para o formulário.');
         };
-        loadInitialData();
+        clienteService.getAllClientes().then(setClientes).catch(onError).finally(() => setLoadingClientes(false));
+        equipamentoService.getAllEquipamentos().then(setEquipamentos).catch(onError).finally(() => setLoadingEquipamentos(false));
+        usuarioService.getAllUsuarios()
+            .then((users) => setTecnicos(users.filter((u) => u.perfil === 'TECNICO')))
+            .catch(onError)
+            .finally(() => setLoadingTecnicos(false));
     }, []);
 
-    const handleClienteChange = (clienteId) => {
-        if (clienteId) {
-            setEquipamentosFiltrados(equipamentos.filter((e) => e.clienteId === clienteId));
-        } else {
-            setEquipamentosFiltrados([]);
-        }
+    const handleClienteChange = () => {
         form.setFieldsValue({ equipamentoId: undefined });
     };
 
@@ -303,25 +287,6 @@ function OrdemServicoCreatePage() {
             setIsSubmitting(false);
         }
     };
-
-    if (isLoading) {
-        return (
-            <Page>
-                <Hero>
-                    <HeroInner>
-                        <HeroInfo>
-                            <h1>Nova OS</h1>
-                        </HeroInfo>
-                    </HeroInner>
-                </Hero>
-                <Content>
-                    <LoadWrap>
-                        <Spin size="large" />
-                    </LoadWrap>
-                </Content>
-            </Page>
-        );
-    }
 
     return (
         <Page>
@@ -372,6 +337,7 @@ function OrdemServicoCreatePage() {
                                             showSearch
                                             optionFilterProp="children"
                                             onChange={handleClienteChange}
+                                            loading={loadingClientes}
                                             allowClear
                                         >
                                             {clientes.map((c) => (
@@ -393,6 +359,7 @@ function OrdemServicoCreatePage() {
                                             showSearch
                                             optionFilterProp="children"
                                             disabled={!clienteIdWatch}
+                                            loading={loadingEquipamentos}
                                         >
                                             {equipamentosFiltrados.map((eq) => (
                                                 <Select.Option key={eq.id} value={eq.id}>
@@ -404,7 +371,7 @@ function OrdemServicoCreatePage() {
                                 </Col>
                                 <Col xs={24} md={12}>
                                     <Form.Item name="tecnicoId" label="Técnico (opcional)">
-                                        <Select placeholder="Atribuir técnico" showSearch optionFilterProp="children" allowClear>
+                                        <Select placeholder="Atribuir técnico" showSearch optionFilterProp="children" allowClear loading={loadingTecnicos}>
                                             {tecnicos.map((t) => (
                                                 <Select.Option key={t.id} value={t.id}>
                                                     {t.nome}

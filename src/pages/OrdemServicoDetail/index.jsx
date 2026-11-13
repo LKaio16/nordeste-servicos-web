@@ -370,25 +370,22 @@ function OrdemServicoDetailPage() {
 
     useEffect(() => {
         const fetchData = async () => {
+            // Fotos, assinatura e registros de tempo disparam em paralelo com a OS e não bloqueiam a tela
+            setIsLoadingRegistrosTempo(true);
+            osService.getFotosByOsId(id)
+                .then(setFotos)
+                .catch((error) => message.error('Erro ao carregar fotos da OS: ' + error.message));
+            osService.getAssinaturaByOsId(id)
+                .then(setAssinatura)
+                .catch((error) => message.error('Erro ao carregar assinatura da OS: ' + error.message));
+            osService.getRegistrosTempoByOsId(id)
+                .then((registrosData) => setRegistrosTempo(registrosData || []))
+                .catch(() => setRegistrosTempo([]))
+                .finally(() => setIsLoadingRegistrosTempo(false));
+
             try {
                 const data = await osService.getOrdemServicoById(id);
                 setOs(data);
-                const fotosData = await osService.getFotosByOsId(id);
-                setFotos(fotosData);
-                const assinaturaData = await osService.getAssinaturaByOsId(id);
-                setAssinatura(assinaturaData);
-
-                // Registros de tempo
-                setIsLoadingRegistrosTempo(true);
-                try {
-                    const registrosData = await osService.getRegistrosTempoByOsId(id);
-                    setRegistrosTempo(registrosData || []);
-                } catch (e) {
-                    // Se falhar, não impede carregar o restante da tela
-                    setRegistrosTempo([]);
-                } finally {
-                    setIsLoadingRegistrosTempo(false);
-                }
             } catch (error) {
                 message.error('Erro ao carregar dados da OS: ' + error.message);
             } finally {
