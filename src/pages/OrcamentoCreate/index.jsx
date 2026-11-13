@@ -863,8 +863,8 @@ function OrcamentoCreatePage() {
         }
         setLoadingOsCliente(true);
         try {
-            const osData = await osService.getAllOrdensServico('', 0, 200, { clienteId });
-            setOrdensServicoFiltradas(Array.isArray(osData) ? osData : []);
+            const osPage = await osService.getOrdensServicoPage('', 0, 200, { clienteId });
+            setOrdensServicoFiltradas(osPage?.content || []);
         } catch (e) {
             console.error(e);
             message.error('Não foi possível carregar as ordens de serviço deste cliente.');

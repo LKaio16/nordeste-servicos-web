@@ -18,13 +18,14 @@ export const getAllOrdensServico = async (searchTerm = '', page = 0, size = 20, 
     }
 };
 
-export const getOrdensServicoPage = async (searchTerm = '', page = 0, size = 20) => {
+export const getOrdensServicoPage = async (searchTerm = '', page = 0, size = 20, extraParams = {}) => {
     try {
         const response = await api.get('/api/ordens-servico/paged', {
             params: {
                 searchTerm: searchTerm || null,
                 page,
-                size
+                size,
+                ...extraParams
             }
         });
         return response.data;

@@ -458,9 +458,12 @@ function OrcamentoEditPage() {
         const fetchOrcamentoData = async () => {
             try {
                 const orcamentoData = await orcamentoService.getOrcamentoById(id);
-                const [osData, pecasData, tiposData, itensData] = await Promise.all([
-                    // Carrega somente OS do cliente do orçamento para evitar payload enorme
-                    osService.getAllOrdensServico('', 0, 200, { clienteId: orcamentoData.clienteId }),
+                // OS do cliente carregam em segundo plano (endpoint leve) para não bloquear a tela
+                osService.getOrdensServicoPage('', 0, 200, { clienteId: orcamentoData.clienteId })
+                    .then((osPage) => setOrdensServico(osPage?.content || []))
+                    .catch((osErr) => console.error('Erro ao carregar OS do cliente:', osErr));
+
+                const [pecasData, tiposData, itensData] = await Promise.all([
                     pecaMaterialService.getAllPecasMateriais(),
                     tipoServicoService.getAllTiposServico(),
                     itemOrcamentoService.getItensByOrcamento(id)
@@ -489,7 +492,6 @@ function OrcamentoEditPage() {
                     observacoesCondicoes: orcamentoData.observacoesCondicoes || '',
                 });
 
-                setOrdensServico(osData);
                 setPecasMateriais(pecasData);
                 setTiposServico(tiposData);
                 setItens(itensData);
@@ -868,7 +870,7 @@ function OrcamentoEditPage() {
                                 >
                                 {ordensServico.map(os => (
                                         <Option key={os.id} value={os.id}>
-                                        OS nº {os.id} - ({os.cliente?.nomeCompleto || 'Cliente não informado'})
+                                        OS nº {os.id} - ({os.clienteNome || 'Cliente não informado'})
                                         </Option>
                                 ))}
                             </Select>
